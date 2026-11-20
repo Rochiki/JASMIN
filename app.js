@@ -19,6 +19,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
   'use strict';
 
   const DB = window.JSEA_DB;
+  if (DB && DB.jobs) { /* tutorial darurat bukan JSEA: buang sisa data lama dari cache */ DB.jobs = DB.jobs.filter((j) => j.module !== 'DRT'); if (DB.modules) DB.modules = DB.modules.filter((m) => m.code !== 'DRT'); }
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1028,7 +1029,7 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
   /* ---- chips cepat ---- */
   const CHIPS = [
     ['Buat JSEA Baru', 'Buat JSEA Baru'], ['Daftar Pekerjaan Excavator', 'Daftar Pekerjaan Excavator'], ['Daftar Pekerjaan ADT', 'Daftar Pekerjaan ADT'],
-    ['Truck & Mobile Workshop', 'Daftar Pekerjaan Truck dan Mobile Workshop'], ['Aturan Zero Energy State', 'Aturan Zero Energy State'], ['🚨 Tutorial Darurat', 'Tutorial Darurat'],
+    ['Truck & Mobile Workshop', 'Daftar Pekerjaan Truck dan Mobile Workshop'], ['Aturan Zero Energy State', 'Aturan Zero Energy State'],
   ];
   $('#chips').innerHTML = CHIPS.map(([l, q]) => `<button class="chip" type="button" data-q="${esc(q)}">${esc(l)}</button>`).join('') + `<a class="chip wa" href="${WA_URL}" target="_blank" rel="noopener noreferrer">Hubungi Tim Safety</a>`;
   $('#chips').addEventListener('click', (e) => { const c = e.target.closest('.chip[data-q]'); if (c) ask(c.dataset.q); });
@@ -1070,7 +1071,6 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
   $('#tutSearch').addEventListener('input', (e) => renderTutList(e.target.value));
   $('#tutList').addEventListener('click', (e) => { const b = e.target.closest('[data-tut]'); if (!b) return; const t = TUT().find((x) => x.id === b.dataset.tut); if (!t) return; closeModals(); userSays('Tutorial ' + t.title); botReply(async () => tutorReply(t), 'alert', 500); });
   $('#btnTutor').addEventListener('click', openTutor);
-  $('#btnTutor2').addEventListener('click', openTutor);
 
   /* ---- pengaturan Mode Cerdas ---- */
   function fillVoiceSelect(sel, l) {
