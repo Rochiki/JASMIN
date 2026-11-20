@@ -27,7 +27,7 @@
 
   const HEAD = ['NO', 'SEQUENCE OF BASIC JOB STEPS (Uraian/Langkah Kerja)', 'HAZARD (Bahaya)', 'ENVIRONMENT IMPACT ANALYSIS (Analisa Dampak Lingkungan)', 'PREVENTION/CONTROLLING (Pencegahan/Pengendalian)', 'PIC'];
   const rowsOf = (f) => f.rows.map((r) => [r.no, r.step, J.cellText(r, 'hazard'), J.cellText(r, 'env'), J.cellText(r, 'ctl'), r.pic]);
-  const critLines = (f) => (f.critical.length ? f.critical.map((c) => '• ' + (c.k === 'scope' ? 'Catatan lingkup: ' : '') + J.plain(c.text)) : [J.NOVERIFY || '']);
+  const critLines = (f) => (f.critical.length ? f.critical.map((c) => '• ' + (c.k === 'scope' ? 'Catatan lingkup: ' : '') + J.plain(c.text)) : [f.noverify || J.NOVERIFY || '']);
   const dateID = (iso) => { try { return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso + 'T00:00:00')); } catch { return iso; } };
   const safeName = (s) => String(s).normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 70) || 'Pekerjaan';
   const fileBase = (f, meta) => `JSEA_${safeName(meta.nama || f.meta.nama)}_${meta.tanggal || J.todayISO()}`;

@@ -133,6 +133,122 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     return { speak, stop, get lang() { return lang; }, firstSentence };
   })();
 
+
+  /* ======================================================================
+     1c. TERJEMAHAN ID -> EN (Chrome Translator on-device, atau Gemini bila Mode Cerdas aktif)
+     ====================================================================== */
+  const NOENV_EN = 'No significant environmental impact was identified for this step.';
+  const NOVERIFY_EN = 'No critical information requires additional verification based on the available sources.';
+  const DISCLAIMER_EN = 'Note: This AI provides recommendations based on the documents, regulations, standards, and references available. Always verify against actual field conditions and refer to work procedures, equipment manuals, and applicable regulations. If there is any doubt or an unsafe condition, stop the work and consult your supervisor or the QSHE team before continuing.';
+  const trCache = new Map();
+  let trEngine = null;
+  const PVTOK = /\[PERLU VERIFIKASI\]/g;
+
+  async function getEngine() {
+    if (trEngine) return trEngine;
+    if ('Translator' in self) {
+      try {
+        const opt = { sourceLanguage: 'id', targetLanguage: 'en' };
+        const av = await Translator.availability(opt);
+        if (av !== 'unavailable') {
+          if (av !== 'available') toast('Mengunduh model terjemahan (sekali saja)…');
+          const tr = await Translator.create(opt);
+          trEngine = { name: 'chrome', run: async (list) => { const out = []; for (const s of list) out.push(await tr.translate(s)); return out; } };
+          return trEngine;
+        }
+      } catch (e) { console.warn('Translator API gagal', e); }
+    }
+    const s = settings();
+    if (s.enabled && s.key) {
+      trEngine = { name: 'gemini', run: geminiTranslate };
+      return trEngine;
+    }
+    throw new Error('Terjemahan butuh Chrome terbaru (desktop, versi 138+) atau Mode Cerdas (⚙ → API key Gemini). Alternatif: klik kanan halaman → Terjemahkan ke Inggris.');
+  }
+  async function geminiTranslate(list) {
+    const s = settings(); const out = [];
+    for (let i = 0; i < list.length; i += 40) {
+      const chunk = list.slice(i, i + 40);
+      const body = { systemInstruction: { parts: [{ text: 'Translate each Indonesian string in the JSON array to natural, precise English for an occupational safety (JSEA) document. Keep numbers, units, abbreviations (LOTO, PPE, ADT), and the token [PV] unchanged. Do not add or remove information. Return ONLY a JSON array of strings with the same length and order.' }] }, contents: [{ role: 'user', parts: [{ text: JSON.stringify(chunk) }] }], generationConfig: { temperature: 0, responseMimeType: 'application/json' } };
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(s.model || CONFIG.GEMINI_MODEL)}:generateContent`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': s.key }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error('Terjemahan Gemini gagal (HTTP ' + res.status + ')');
+      const data = await res.json();
+      const arr = JSON.parse(data.candidates[0].content.parts.map((p) => p.text).join(''));
+      if (!Array.isArray(arr) || arr.length !== chunk.length) throw new Error('Format terjemahan tidak sesuai');
+      out.push(...arr.map(String));
+    }
+    return out;
+  }
+  // terjemahkan daftar string (dengan cache); mengembalikan Map asli -> Inggris
+  async function translateStrings(strs) {
+    const todo = strs.filter((s) => !trCache.has(s));
+    if (todo.length) {
+      const eng = await getEngine();
+      const res = await eng.run(todo.map((s) => s.replace(PVTOK, '[PV]')));
+      todo.forEach((s, i) => trCache.set(s, String(res[i] ?? s).replace(/\[\s*PV\s*\]/gi, '[PERLU VERIFIKASI]')));
+    }
+    return trCache;
+  }
+  async function translateForm(f) {
+    const set = new Set(); const add = (s) => { if (s && /[A-Za-z]/.test(s)) set.add(s); };
+    add(f.meta.nama);
+    f.rows.forEach((r) => { add(r.step); r.hazard.forEach((x) => add(x.text)); r.env.forEach((x) => x.k !== 'noenv' && add(x.text)); r.controls.forEach((c) => { add(c.text); add(c.label); }); add(r.pic); });
+    f.critical.forEach((c) => add(c.text)); f.apd.forEach((x) => add(x.text));
+    Object.values(f.support).forEach((v) => v.forEach(add));
+    add(f.ppe.mandatory); add(f.ppe.additional); add(f.emergency.potential); add(f.emergency.firstResponse); add(f.emergency.equipment); add(f.keterangan);
+    const M = await translateStrings([...set]);
+    const T = (s) => (s && M.has(s) ? M.get(s) : s);
+    return {
+      ...f, en: true, orig: f.orig || f, noverify: NOVERIFY_EN, disclaimer: DISCLAIMER_EN,
+      meta: { ...f.meta, nama: T(f.meta.nama) },
+      apd: f.apd.map((x) => ({ ...x, text: T(x.text) })),
+      critical: f.critical.map((c) => ({ ...c, text: T(c.text) })),
+      support: Object.fromEntries(Object.entries(f.support).map(([k, v]) => [k, v.map(T)])),
+      ppe: { ...f.ppe, mandatory: T(f.ppe.mandatory), additional: T(f.ppe.additional) },
+      emergency: { ...f.emergency, potential: T(f.emergency.potential), firstResponse: T(f.emergency.firstResponse), equipment: T(f.emergency.equipment) },
+      keterangan: T(f.keterangan),
+      rows: f.rows.map((r) => ({
+        ...r, step: T(r.step), pic: T(r.pic),
+        hazard: r.hazard.map((x) => ({ ...x, text: T(x.text) })),
+        env: r.env.map((x) => (x.k === 'noenv' ? { ...x, text: NOENV_EN } : { ...x, text: T(x.text) })),
+        controls: r.controls.map((c) => ({ ...c, label: T(c.label), text: c.pv ? T(c.text) + ' ' + PV : T(c.text), pv: false })),
+      })),
+    };
+  }
+  // pesan non-JSEA: terjemahkan node teks di dalam gelembung
+  async function translateBubble(bubble) {
+    const nodes = []; const w = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT);
+    while (w.nextNode()) { const n = w.currentNode; if (n.nodeValue.trim().length > 1 && /[A-Za-z]/.test(n.nodeValue) && !n.parentElement.closest('.tr-msg,.code')) nodes.push(n); }
+    const M = await translateStrings([...new Set(nodes.map((n) => n.nodeValue))]);
+    nodes.forEach((n) => { if (n.__orig === undefined) n.__orig = n.nodeValue; if (M.has(n.__orig)) n.nodeValue = M.get(n.__orig); });
+    bubble.dataset.lang = 'en';
+  }
+  function untranslateBubble(bubble) {
+    const w = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT);
+    while (w.nextNode()) { const n = w.currentNode; if (n.__orig !== undefined) n.nodeValue = n.__orig; }
+    bubble.dataset.lang = 'id';
+  }
+  async function toggleTranslate(btn) {
+    const row = btn.closest('.msg'); if (!row) return;
+    const old = btn.textContent; btn.disabled = true; btn.textContent = '⏳ …';
+    try {
+      const jsea = row.querySelector('.jsea');
+      if (jsea) {
+        const cur = forms.get(row.id);
+        const next = cur.en ? cur.orig : await translateForm(cur);
+        forms.set(row.id, next);
+        jsea.outerHTML = formHTML(next);
+        row.dataset.lang = next.en ? 'en' : 'id';
+        Mascot.play('thumbs', 2200);
+      } else {
+        const bubble = $('.bubble', row);
+        if (bubble.dataset.lang === 'en') untranslateBubble(bubble); else await translateBubble(bubble);
+        const nb = $('.tr-msg', row); if (nb) nb.textContent = bubble.dataset.lang === 'en' ? '🌐 Indonesia' : '🌐 English';
+      }
+    } catch (e) { toast(e.message || 'Terjemahan gagal'); Mascot.play('think', 2500); }
+    finally { const b = row.querySelector('[data-act="translate"],.tr-msg'); if (btn.isConnected) { btn.disabled = false; if (btn.textContent === '⏳ …') btn.textContent = old; } }
+  }
+
   /* ======================================================================
      2. PENGOLAHAN TEKS (bahasa pekerja, slang, sinonim)
      ====================================================================== */
@@ -337,7 +453,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
         no: job.id, nama: job.title, tanggal: opts.tanggal || todayISO(),
         lokasi: saved.lokasi || '', dept: saved.dept || '', disetujui: saved.disetujui || '', dianalisa: saved.dianalisa || '',
       },
-      apd, rows, critical, disclaimer: job.disclaimer || DISCLAIMER,
+      apd, rows, critical, noverify: NOVERIFY, disclaimer: job.disclaimer || DISCLAIMER,
       support: {
         'Additional Safety Tips': job.additionalSafetyTips, 'Point of Concern': job.pointOfConcern, 'Common Mistakes': job.commonMistakes,
         'Golden Rules': job.goldenRules, 'Critical Controls': job.criticalControls,
@@ -381,9 +497,9 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
   }).join('');
 
   function formHTML(f) {
-    const m = f.meta;
+    const m = f.meta; const t = (a, b) => (f.en ? b : a);
     const val = (v, ph) => (v ? `<div class="v">${esc(v)}</div>` : `<div class="v blank">${ph}</div>`);
-    const dateTxt = (() => { try { return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(m.tanggal + 'T00:00:00')); } catch { return m.tanggal; } })();
+    const dateTxt = (() => { try { return new Intl.DateTimeFormat(f.en ? 'en-GB' : 'id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(m.tanggal + 'T00:00:00')); } catch { return m.tanggal; } })();
     const apdWajib = f.apd.filter((a) => a.g === 'wajib'), apdTam = f.apd.filter((a) => a.g === 'tambahan');
     const apdHTML = (arr) => arr.map((a) => `<span>${esc(a.text)}</span>`).join('');
     const rowsHTML = f.rows.map((r) => `<tr>
@@ -395,11 +511,11 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
       <td class="c-pic" data-label="PIC">${esc(r.pic)}</td></tr>`).join('');
     const sup = Object.entries(f.support).filter(([, v]) => v.length).map(([k, v]) => `<h5>${esc(k)}</h5><ul>${v.map((x) => `<li>${rich(x)}</li>`).join('')}</ul>`).join('');
     const e = f.emergency;
-    const emerg = (e.potential || e.firstResponse || e.equipment) ? `<h5>Emergency Response</h5><ul>${e.potential ? `<li><b>Potensi keadaan darurat:</b> ${rich(e.potential)}</li>` : ''}${e.firstResponse ? `<li><b>Respon awal:</b> ${rich(e.firstResponse)}</li>` : ''}${e.equipment ? `<li><b>Peralatan darurat:</b> ${rich(e.equipment)}</li>` : ''}</ul>` : '';
-    const refs = f.rows.map((r) => `<li><span class="rn">Langkah ${r.no}:</span> ${r.refs.map(esc).join('; ')}</li>`).join('');
+    const emerg = (e.potential || e.firstResponse || e.equipment) ? `<h5>Emergency Response</h5><ul>${e.potential ? `<li><b>${t('Potensi keadaan darurat', 'Potential emergency')}:</b> ${rich(e.potential)}</li>` : ''}${e.firstResponse ? `<li><b>${t('Respon awal', 'First response')}:</b> ${rich(e.firstResponse)}</li>` : ''}${e.equipment ? `<li><b>${t('Peralatan darurat', 'Emergency equipment')}:</b> ${rich(e.equipment)}</li>` : ''}</ul>` : '';
+    const refs = f.rows.map((r) => `<li><span class="rn">${t('Langkah', 'Step')} ${r.no}:</span> ${r.refs.map(esc).join('; ')}</li>`).join('');
     const crit = f.critical.length
-      ? `<ul>${f.critical.map((c) => `<li>${c.k === 'scope' ? '<b>Catatan lingkup:</b> ' : ''}${esc(c.text).replace(esc(PV), `<span class="pv">${PV}</span>`).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</li>`).join('')}</ul>`
-      : `<p>${esc(NOVERIFY)}</p>`;
+      ? `<ul>${f.critical.map((c) => `<li>${c.k === 'scope' ? `<b>${t('Catatan lingkup', 'Scope note')}:</b> ` : ''}${esc(c.text).replace(esc(PV), `<span class="pv">${PV}</span>`).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</li>`).join('')}</ul>`
+      : `<p>${esc(f.en ? NOVERIFY_EN : NOVERIFY)}</p>`;
     return `<div class="jsea" data-code="${esc(f.code)}">
       <div class="jsea-title"><b>JSEA</b><span>(JOB SAFETY ENVIRONMENT ANALYSIS)</span></div>
       <div class="jmeta">
@@ -411,7 +527,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
         <div><label>Dianalisa Oleh:</label>${val(m.dianalisa, '…………')}<small style="font-style:italic;color:#666">(QSHE Dept.)</small></div>
         <div class="span4"><label>APD yang harus dipakai</label>
           <div class="apd-chips">${apdHTML(apdWajib)}</div>
-          ${apdTam.length ? `<div class="sublbl">Tambahan sesuai kondisi kerja</div><div class="apd-chips">${apdHTML(apdTam)}</div>` : ''}</div>
+          ${apdTam.length ? `<div class="sublbl">${t('Tambahan sesuai kondisi kerja', 'Additional, depending on work conditions')}</div><div class="apd-chips">${apdHTML(apdTam)}</div>` : ''}</div>
       </div>
       <div class="table-scroll"><table class="jtable"><thead><tr>
         <th class="c-no">NO</th><th class="c-step">SEQUENCE OF BASIC JOB STEPS<small>(Uraian/Langkah Kerja)</small></th>
@@ -419,16 +535,17 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
         <th class="c-ctl">PREVENTION/ CONTROLLING<small>(Pencegahan / Pengendalian)</small></th><th class="c-pic">PIC</th></tr></thead>
         <tbody>${rowsHTML}</tbody></table></div>
       <div class="jblock critical"><h4>CRITICAL INFORMATION TO VERIFY</h4>${crit}</div>
-      <details class="more"><summary>Informasi pendukung pekerjaan ini</summary><div class="more-body">${sup}
-        <h5>Required PPE</h5><ul>${f.ppe.mandatory ? `<li><b>Wajib:</b> ${rich(f.ppe.mandatory)}</li>` : ''}${f.ppe.additional ? `<li><b>Tambahan:</b> ${rich(f.ppe.additional)}</li>` : ''}</ul>
-        ${emerg}${f.keterangan ? `<h5>Keterangan</h5><p>${rich(f.keterangan)}</p>` : ''}</div></details>
-      <details class="more"><summary>Dasar regulasi &amp; referensi per langkah</summary><div class="more-body"><ul class="refs">${refs}</ul></div></details>
+      <details class="more"><summary>${t('Informasi pendukung pekerjaan ini', 'Supporting information for this job')}</summary><div class="more-body">${sup}
+        <h5>Required PPE</h5><ul>${f.ppe.mandatory ? `<li><b>${t('Wajib', 'Mandatory')}:</b> ${rich(f.ppe.mandatory)}</li>` : ''}${f.ppe.additional ? `<li><b>${t('Tambahan', 'Additional')}:</b> ${rich(f.ppe.additional)}</li>` : ''}</ul>
+        ${emerg}${f.keterangan ? `<h5>${t('Keterangan', 'Remarks')}</h5><p>${rich(f.keterangan)}</p>` : ''}</div></details>
+      <details class="more"><summary>${t('Dasar regulasi &amp; referensi per langkah', 'Regulations &amp; references per step')}</summary><div class="more-body"><ul class="refs">${refs}</ul></div></details>
       <p class="disc">${esc(f.disclaimer)}</p>
       <div class="jactions">
         <button class="btn primary" type="button" data-act="pdf">📄 Download as PDF</button>
         <button class="btn" type="button" data-act="copy">📋 Copy Tabel (Siap Paste ke Excel)</button>
         <button class="btn" type="button" data-act="xlsx">📊 Download Excel (.xlsx)</button>
         <button class="btn" type="button" data-act="csv">⬇ CSV</button>
+        <button class="btn" type="button" data-act="translate">${f.en ? '🌐 Indonesia' : '🌐 English'}</button>
         <button class="btn" type="button" data-act="catalog">🗂 Katalog</button>
       </div></div>`;
   }
@@ -448,6 +565,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     const av = role === 'bot' ? `<div class="av"><img src="${CONFIG.AVATAR}" alt="${CONFIG.BOT_NAME}" width="40" height="40"></div>` : '<div class="av" style="border:0;background:none"><svg viewBox="0 0 40 40" width="40" height="40"><use href="#s-user"/></svg></div>';
     row.innerHTML = role === 'bot' ? `${av}<div class="bubble${opts.wide ? ' wide' : ''}">${html}</div>` : `<div class="bubble">${html}</div>${av}`;
     msgs.appendChild(row);
+    if (role === 'bot' && opts.tr) { const b = document.createElement('button'); b.type = 'button'; b.className = 'tr-msg'; b.dataset.act = 'translate'; b.textContent = '🌐 English'; $('.bubble', row).appendChild(b); }
     if (opts.wide) msgs.scrollTop = Math.max(0, row.offsetTop - 12); else msgs.scrollTop = msgs.scrollHeight;
     return row;
   }
@@ -465,7 +583,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     const wait = Math.max(0, ms - (Date.now() - t0)); if (wait) await sleep(reduceMotion ? 0 : wait);
     t.remove();
     Mascot.think(false);
-    const row = addMsg('bot', res.html, { wide: res.wide });
+    const row = addMsg('bot', res.html, { wide: res.wide, tr: !res.form });
     if (res.form) forms.set(row.id, res.form);
     Mascot.play(res.pose || pose, res.poseMs || 2600);
     Voice.speak(res.say || autoSay(res, row));
@@ -660,6 +778,7 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
     const act = b.dataset.act;
     if (act === 'jsea') showJSEA(b.dataset.code);
     else if (act === 'ask') ask(b.dataset.q);
+    else if (act === 'translate') toggleTranslate(b);
     else if (act === 'catalog') openCatalog();
     else if (act === 'module') { userSays(modMap.get(b.dataset.mod).name); botReply(async () => moduleList(b.dataset.mod)); }
     else if (['pdf', 'copy', 'xlsx', 'csv'].includes(act)) {
@@ -763,5 +882,5 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
   }
 
   /* ---- API untuk export.js ---- */
-  window.JASMIN = { Voice, CONFIG, WA_URL, DB, buildForm, cellText, todayISO, todayLong, toast, Mascot, store, esc, plain, PV, NOENV, respond, search, genericize };
+  window.JASMIN = { NOVERIFY, Voice, CONFIG, WA_URL, DB, buildForm, cellText, todayISO, todayLong, toast, Mascot, store, esc, plain, PV, NOENV, respond, search, genericize };
 })();

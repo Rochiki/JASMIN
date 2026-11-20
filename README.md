@@ -46,6 +46,12 @@ Menu **ID | EN | 🔇** di bagian atas chat memilih bahasa suara. Teh JASMIN han
 - Kualitas suara tergantung browser/perangkat: Chrome & Edge (Windows/Android) biasanya punya suara Indonesia perempuan. Bila tidak ada suara perempuan, dipakai suara bahasa itu yang tersedia.
 - Suara baru berbunyi setelah pengguna berinteraksi (aturan browser), jadi sapaan pembuka saat halaman dibuka tidak dibacakan.
 
+## Terjemahan Indonesia → English
+- Tiap balasan bot punya tombol kecil **🌐 English**; di bawah tabel JSEA ada tombol **🌐 English / Indonesia**. Klik lagi untuk kembali ke Indonesia.
+- Setelah diterjemahkan, tabel yang diunduh (PDF, Excel, CSV, Salin) ikut berbahasa Inggris.
+- Mesin terjemahan: (1) **Chrome desktop terbaru (v138+)** memakai penerjemah bawaan di perangkat (gratis, tanpa API key; model diunduh sekali). (2) Bila tidak tersedia, dipakai **Mode Cerdas** (API key Gemini). (3) Bila keduanya tidak ada, muncul pemberitahuan; alternatifnya klik kanan halaman → *Terjemahkan ke Inggris*.
+- Terjemahan mesin: istilah teknis dan `[PERLU VERIFIKASI]` dijaga, tetapi tetap perlu dibaca ulang sebelum dipakai resmi.
+
 ## Mode Cerdas (opsional)
 Tombol ⚙ di sidebar. Isi API key Gemini sendiri; tersimpan hanya di browser perangkat itu. Dipakai untuk tanya-jawab bebas saja; tabel JSEA selalu diambil dari database.
 
