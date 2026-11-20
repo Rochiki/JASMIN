@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>J.A.S.M.I.N — JSEA Asisten Selamat, Mudah, &amp; Instan</title>
+<meta name="description" content="Teh JASMIN, asisten JSEA (Job Safety Environment Analysis) untuk service unit alat berat.">
+<meta name="theme-color" content="#1E2B4D">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ SPRITE STIKER (SVG buatan sendiri) ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <pattern id="hazardStripe" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="14" height="14" fill="#FFD23F"/><rect width="7" height="14" fill="#1b2236"/>
+    </pattern>
+  </defs>
+
+  <symbol id="s-helmet" viewBox="0 0 110 90">
+    <path d="M12 64C12 28 32 12 55 12s43 16 43 52z" fill="#F97316" stroke="#1b2236" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="46" y="8" width="18" height="56" rx="6" fill="#EA580C" stroke="#1b2236" stroke-width="4"/>
+    <path d="M24 56c2-16 12-26 26-30" fill="none" stroke="#FDBA74" stroke-width="5" stroke-linecap="round"/>
+    <rect x="4" y="62" width="102" height="16" rx="8" fill="#FB923C" stroke="#1b2236" stroke-width="4"/>
+    <path d="M92 8l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#FFF3C4" stroke="#1b2236" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M12 30l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#FFF3C4" stroke="#1b2236" stroke-width="2" stroke-linejoin="round"/>
+  </symbol>
+
+  <symbol id="s-excavator" viewBox="0 0 130 90">
+    <rect x="10" y="66" width="70" height="18" rx="9" fill="#3a3f4b" stroke="#1b2236" stroke-width="3.5"/>
+    <circle cx="24" cy="75" r="5" fill="#cbd0da"/><circle cx="45" cy="75" r="5" fill="#cbd0da"/><circle cx="66" cy="75" r="5" fill="#cbd0da"/>
+    <rect x="18" y="46" width="56" height="21" rx="4" fill="#F97316" stroke="#1b2236" stroke-width="3.5"/>
+    <path d="M22 46V28q0-5 5-5h20l8 23z" fill="#F97316" stroke="#1b2236" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M29 44V30h16l5 14z" fill="#CFE9FF" stroke="#1b2236" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M68 50L96 22l12 24" fill="none" stroke="#1b2236" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M68 50L96 22l12 24" fill="none" stroke="#F97316" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M102 42l18 4-7 16-16-6z" fill="#F97316" stroke="#1b2236" stroke-width="3.5" stroke-linejoin="round"/>
+    <circle cx="96" cy="22" r="3.2" fill="#FFF3C4" stroke="#1b2236" stroke-width="2"/>
+  </symbol>
+
+  <symbol id="s-warning" viewBox="0 0 110 100">
+    <path d="M22 78l-12 18 30-12z" fill="url(#hazardStripe)" stroke="#1b2236" stroke-width="3.5" stroke-linejoin="round"/>
+    <rect x="6" y="6" width="98" height="76" rx="16" fill="url(#hazardStripe)" stroke="#1b2236" stroke-width="3.5"/>
+    <rect x="16" y="16" width="78" height="56" rx="10" fill="#FFE27A" stroke="#1b2236" stroke-width="3"/>
+    <ellipse cx="42" cy="40" rx="3.6" ry="4.6" fill="#1b2236"/><ellipse cx="68" cy="40" rx="3.6" ry="4.6" fill="#1b2236"/>
+    <path d="M44 52q11 9 22 0" fill="none" stroke="#1b2236" stroke-width="3.4" stroke-linecap="round"/>
+    <ellipse cx="34" cy="50" rx="5.5" ry="3.4" fill="#FF9AA2" opacity=".75"/><ellipse cx="76" cy="50" rx="5.5" ry="3.4" fill="#FF9AA2" opacity=".75"/>
+  </symbol>
+
+  <symbol id="s-whatsapp" viewBox="0 0 32 32">
+    <circle cx="16" cy="16" r="16" fill="#25D366"/>
+    <path fill="#fff" d="M16.03 6.4a9.5 9.5 0 0 0-8.1 14.42L6.6 25.6l4.92-1.29A9.5 9.5 0 1 0 16.03 6.4zm0 17.4a7.9 7.9 0 0 1-4.03-1.1l-.29-.17-2.92.77.78-2.85-.19-.3a7.9 7.9 0 1 1 6.65 3.65zm4.33-5.9c-.24-.12-1.4-.69-1.62-.77-.22-.08-.38-.12-.54.12-.16.24-.62.77-.76.93-.14.16-.28.18-.52.06-.24-.12-1-.37-1.9-1.17-.7-.63-1.18-1.4-1.32-1.64-.14-.24-.01-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.5.58.18 1.1.16 1.51.1.46-.07 1.4-.57 1.6-1.12.2-.55.2-1.02.14-1.12-.06-.1-.22-.16-.46-.28z"/>
+  </symbol>
+
+  <symbol id="s-user" viewBox="0 0 40 40">
+    <circle cx="20" cy="20" r="20" fill="#C9D6EA"/><circle cx="20" cy="15" r="7" fill="#8DA2C4"/><path d="M6 35c2-9 8-12 14-12s12 3 14 12a20 20 0 0 1-28 0z" fill="#8DA2C4"/>
+  </symbol>
+  <symbol id="s-send" viewBox="0 0 24 24"><path d="M3 11.2 20.2 3.6c.9-.4 1.8.5 1.4 1.4L14 21.2c-.4.9-1.7.8-1.9-.2l-1.6-6.3-6.3-1.6c-1-.2-1.1-1.5-.2-1.9z" fill="currentColor"/></symbol>
+  <symbol id="s-doc" viewBox="0 0 24 24"><path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1.5V8h4.5zM8 12h8v1.7H8zm0 3.5h8v1.7H8z" fill="currentColor"/></symbol>
+  <symbol id="s-gear" viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4.9a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.600 7.600 0 0 0-1.700 1l-2.400-.9-2 3.400 2 1.600a7.600 7.600 0 0 0 0 2l-2 1.600 2 3.400 2.400-.9c.5.4 1.100.7 1.700 1L11 21h4l.4-2.900c.6-.3 1.200-.6 1.700-1l2.400.9 2-3.400zM13 15.500a3.500 3.500 0 1 1 0-7 3.500 3.500 0 0 1 0 7z" fill="currentColor"/></symbol>
+  <symbol id="s-menu" viewBox="0 0 24 24"><path d="M4 6h16v2.4H4zm0 4.800h16v2.400H4zm0 4.800h16V18H4z" fill="currentColor"/></symbol>
+</svg>
+
+<!-- ============ DEKORASI LATAR ============ -->
+<div class="bg-decor" aria-hidden="true">
+  <i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i>
+  <i class="pixels"></i>
+  <svg class="stk stk-helmet"><use href="#s-helmet"/></svg>
+  <svg class="stk stk-warn stk-warn-1"><use href="#s-warning"/></svg>
+  <svg class="stk stk-warn stk-warn-2"><use href="#s-warning"/></svg>
+</div>
+
+<!-- ============ JENDELA APLIKASI ============ -->
+<main class="window" id="app">
+  <div class="titlebar" aria-hidden="true">
+    <span class="dots"><i></i><i></i><i></i></span>
+    <span class="urlpill">J.A.S.M.I.N · JSEA Asisten Selamat, Mudah, &amp; Instan</span>
+  </div>
+
+  <div class="layout">
+    <!-- ---------- SIDEBAR ---------- -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <svg class="brand-excavator" aria-hidden="true"><use href="#s-excavator"/></svg>
+        <h1 class="logo" aria-label="J.A.S.M.I.N">
+          <span class="l l1">J</span><span class="dot">.</span><span class="l l2">A</span><span class="dot">.</span><span class="l l3">S</span><span class="dot">.</span><span class="l l4">M</span><span class="dot">.</span><span class="l l5">I</span><span class="dot">.</span><span class="l l6">N</span>
+        </h1>
+        <p class="tagline"><b>J</b>SEA Asisten Selamat, Mudah, &amp; Instan</p>
+        <span class="online"><i></i>Online</span>
+      </div>
+
+      <section class="info" aria-labelledby="infoTitle">
+        <h2 id="infoTitle">QSHE Info &amp; Update <span aria-hidden="true">📅🔔</span></h2>
+        <div id="infoCards" class="info-cards"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+      </section>
+
+      <div class="side-actions">
+        <button class="btn-side" id="btnCatalog" type="button"><svg><use href="#s-doc"/></svg>Katalog Pekerjaan JSEA</button>
+        <button class="btn-icon" id="btnSettings" type="button" title="Pengaturan Mode Cerdas (opsional)" aria-label="Pengaturan"><svg><use href="#s-gear"/></svg></button>
+      </div>
+    </aside>
+
+    <!-- ---------- AREA CHAT ---------- -->
+    <section class="chat">
+      <header class="topbar">
+        <button class="menu-btn" id="btnMenu" type="button" aria-label="Tampilkan QSHE Info" aria-expanded="false"><svg><use href="#s-menu"/></svg></button>
+        <h2>AI Chatbot</h2>
+        <a class="wa-badge" id="waBadge" href="#" target="_blank" rel="noopener noreferrer">
+          <svg class="wa-ic"><use href="#s-whatsapp"/></svg>
+          <span class="wa-txt"><b>Chat with Us</b><small>Butuh Bantuan? Hubungi Kami via WhatsApp!</small><em id="waHotline">Hotline: —</em></span>
+        </a>
+      </header>
+
+      <div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+
+      <div class="composer-area">
+        <div class="chips" id="chips" aria-label="Pertanyaan cepat"></div>
+        <form class="composer" id="composer" autocomplete="off">
+          <input id="input" type="text" inputmode="text" enterkeyhint="send" placeholder="Tanyakan sesuatu kepada Teh JASMIN..." aria-label="Pesan untuk Teh JASMIN" maxlength="600">
+          <button class="c-btn c-doc" id="btnCatalog2" type="button" title="Katalog pekerjaan JSEA" aria-label="Katalog pekerjaan JSEA"><svg><use href="#s-doc"/></svg></button>
+          <button class="c-btn c-send" type="submit" title="Kirim" aria-label="Kirim"><svg><use href="#s-send"/></svg></button>
+        </form>
+      </div>
+
+      <!-- Karakter Teh JASMIN (klik = WhatsApp hotline) -->
+      <a class="mascot" id="mascot" href="#" target="_blank" rel="noopener noreferrer" aria-label="Chat dengan tim QSHE lewat WhatsApp">
+        <span class="speech">Halo! Saya<br><b>Teh JASMIN</b><i class="spark">✦</i></span>
+        <span class="mascot-frame">
+          <i class="mascot-blob"></i>
+          <img class="f show" data-pose="idle" src="assets/jasmin-0-idle.webp" alt="Teh JASMIN" width="400" height="355" decoding="async">
+          <img class="f" data-pose="wave" src="assets/jasmin-1-wave.webp" alt="" aria-hidden="true" width="400" height="355" decoding="async">
+          <img class="f" data-pose="present" src="assets/jasmin-2-present.webp" alt="" aria-hidden="true" width="400" height="355" decoding="async">
+          <img class="f" data-pose="think" src="assets/jasmin-3-think.webp" alt="" aria-hidden="true" width="400" height="355" decoding="async">
+          <img class="f" data-pose="cheer" src="assets/jasmin-4-cheer.webp" alt="" aria-hidden="true" width="400" height="355" decoding="async">
+          <img class="f" data-pose="alert" src="assets/jasmin-5-alert.webp" alt="" aria-hidden="true" width="400" height="355" decoding="async">
+          <img class="f" data-pose="thumbs" src="assets/jasmin-6-thumbs.webp" alt="" aria-hidden="true" width="400" height="355" decoding="async">
+          <img class="f" data-pose="heart" src="assets/jasmin-7-heart.webp" alt="" aria-hidden="true" width="400" height="355" decoding="async">
+          <img class="f" data-pose="tip" src="assets/jasmin-8-tip.webp" alt="" aria-hidden="true" width="400" height="355" decoding="async">
+        </span>
+      </a>
+    </section>
+  </div>
+</main>
+
+<!-- ============ MODAL: KATALOG ============ -->
+<div class="modal" id="modalCatalog" hidden>
+  <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="catTitle">
+    <header><h3 id="catTitle">Katalog Pekerjaan JSEA</h3><button class="x" data-close aria-label="Tutup">×</button></header>
+    <div class="modal-body">
+      <input id="catSearch" type="search" placeholder="Cari pekerjaan, mis. silinder, ban, las, parkir…" aria-label="Cari pekerjaan">
+      <div id="catList" class="cat-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: DATA FORM JSEA (sebelum PDF) ============ -->
+<div class="modal" id="modalMeta" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="metaTitle">
+    <header><h3 id="metaTitle">Lengkapi Form JSEA sebelum diunduh</h3><button class="x" data-close aria-label="Tutup">×</button></header>
+    <form class="modal-body meta-form" id="metaForm">
+      <p class="muted">Kolom boleh dikosongkan; PDF tetap bisa diisi tangan setelah dicetak.</p>
+      <div class="grid2">
+        <label>No. JSEA<input name="no" type="text"></label>
+        <label>Tanggal<input name="tanggal" type="date"></label>
+      </div>
+      <label>Nama Pekerjaan<input name="nama" type="text"></label>
+      <div class="grid2">
+        <label>Lokasi<input name="lokasi" type="text" placeholder="mis. Workshop Cabang …"></label>
+        <label>Departemen / Divisi<input name="dept" type="text" placeholder="mis. Service"></label>
+      </div>
+      <div class="grid2">
+        <label>Dianalisa Oleh <small>(QSHE Dept.)</small><input name="dianalisa" type="text"></label>
+        <label>Disetujui Oleh <small>(Sec. Head / Dept. Head / Team Leader)</small><input name="disetujui" type="text"></label>
+      </div>
+      <fieldset><legend>APD yang harus dipakai</legend><div id="apdList" class="apd-list"></div>
+        <div class="apd-add"><input id="apdExtra" type="text" placeholder="Tambah APD lain…"><button type="button" id="apdAddBtn" class="btn-ghost">Tambah</button></div>
+      </fieldset>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="metaBlank">Unduh dengan kolom kosong</button>
+        <button type="submit" class="btn-primary">Unduh PDF</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: PENGATURAN ============ -->
+<div class="modal" id="modalSettings" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <header><h3 id="setTitle">Mode Cerdas (opsional)</h3><button class="x" data-close aria-label="Tutup">×</button></header>
+    <form class="modal-body" id="settingsForm">
+      <p class="muted">Secara bawaan Teh JASMIN bekerja <b>tanpa server</b> dan hanya memakai database JSEA di browser. Anda dapat mengaktifkan model bahasa Gemini untuk menjawab pertanyaan bebas. <b>Tabel JSEA tetap diambil dari database</b>, bukan dikarang model.</p>
+      <label class="check"><input type="checkbox" name="enabled"> Aktifkan Mode Cerdas</label>
+      <label>Gemini API key<input name="key" type="password" autocomplete="off" placeholder="AIza…"></label>
+      <label>Nama model<input name="model" type="text" placeholder="gemini-2.5-flash"></label>
+      <p class="warn">Kunci disimpan hanya di browser perangkat ini (localStorage). Teks pertanyaan dan potongan database yang relevan dikirim ke Google. Jangan memakai kunci milik perusahaan di perangkat bersama.</p>
+      <div class="modal-actions"><button type="button" class="btn-ghost" id="settingsClear">Hapus kunci</button><button type="submit" class="btn-primary">Simpan</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="jsea-database.js"></script>
+<script src="app.js"></script>
+<script src="export.js"></script>
+</body>
+</html>
