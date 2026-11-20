@@ -29,7 +29,7 @@
   /* ---------- state ---------- */
   const S = {
     dateISO: todayISO(), departTime: nowHM(), partner: 'sendiri', jalur: ['darat'], kendaraan: ['lv4wd'], jenisJalan: ['aspal'], kondisi: 'baik', lebar: '2', permukaan: 'datar', barang: ['sparepart'],
-    roundTrip: true, aktivitas: [{ nama: '', menit: '' }], istirahat: [{ nama: 'Makan siang dan ibadah', menit: 60 }], intervalJam: 2, restMenit: 30, permukaanManual: false, pesanEdited: false, riskManual: null,
+    roundTrip: true, aktivitas: [{ nama: '', menit: '' }], istirahat: [{ nama: 'Makan siang dan ibadah', menit: 60 }], intervalJam: 3, restMenit: 15, permukaanManual: false, pesanEdited: false, riskManual: null,
   };
   let A = {}, origin = null, dest = null, busyCalc = 0, calcTimer = null, built = false;
   const cache = { route: new Map(), elev: new Map(), wx: new Map(), rev: new Map() };
@@ -100,6 +100,8 @@
       <div class="jgrid">${fld('plat', 'Plat nomor', 'autocapitalize="characters" maxlength="12"', 'text', 'mis. B 1234 XYZ')}<div class="jf"><span>Partner</span>${chips('partner', 'partner', false)}</div></div>
       <div class="jf"><span>Hasil inspeksi kendaraan</span><div class="jchips" data-name="inspeksi" data-multi="0"><label class="jchip"><input type="radio" name="j-inspeksi" value="aman"><span>Aman</span></label><label class="jchip"><input type="radio" name="j-inspeksi" value="tidak"><span>Tidak aman</span></label></div></div>
       <label class="jf" id="j-inspWrap" hidden><span>Catatan temuan (wajib bila tidak aman)</span><textarea id="j-inspeksiCatatan" rows="2" placeholder="mis. rem terasa kurang pakem, ban depan kiri aus"></textarea></label>
+      <div class="jf"><span>Fungsi VT Device</span><div class="jchips" data-name="vt" data-multi="0"><label class="jchip"><input type="radio" name="j-vt" value="aman"><span>Aman</span></label><label class="jchip"><input type="radio" name="j-vt" value="tidak"><span>Tidak aman</span></label></div></div>
+      <label class="jf" id="j-vtWrap" hidden><span>Catatan VT Device (wajib bila tidak aman)</span><textarea id="j-vtCatatan" rows="2" placeholder="mis. lampu indikator mati, tidak ada sinyal GPS, DID Tag tidak terbaca"></textarea></label>
       <p class="jsmall" id="j-usia"></p></section>
 
     <section class="jcard"><h4>2. Rute (cukup tempel link Google Maps)</h4><div class="jgrid">
@@ -122,7 +124,7 @@
     <section class="jcard"><h4>4. Estimasi pekerjaan dan rencana istirahat</h4>
       <div class="jf"><span>Aktivitas dan lama penyelesaian (jam)</span><div id="j-akt"></div><button type="button" class="jbtn" id="j-addAkt">+ Tambah aktivitas</button></div>
       <div class="jf"><span>Rencana istirahat di lokasi kerja (makan, ibadah, dll.; menit)</span><div id="j-ist"></div><button type="button" class="jbtn" id="j-addIst">+ Tambah istirahat</button></div>
-      <div class="jf"><span>Istirahat selama perjalanan: setiap berapa jam mengemudi, dan berapa menit</span><div class="jgrid"><label class="jf"><span>Setiap (jam)</span><input id="j-intervalJam" type="number" min="1" max="4" step="0.5"></label><label class="jf"><span>Lama (menit)</span><input id="j-restMenit" type="number" min="10" max="120" step="5"></label></div><p class="jsmall">Standar IK: istirahat 30 menit setiap 2 jam mengemudi. Titik istirahat ditentukan otomatis pada rute.</p></div>
+      <div class="jf"><span>Istirahat selama perjalanan</span><div class="jgrid"><label class="jf"><span>Setiap (jam)</span><input id="j-intervalJam" type="number" min="1" max="3" step="0.5"></label><label class="jf"><span>Lama (menit)</span><input id="j-restMenit" type="number" min="15" max="120" step="5"></label></div><p class="jsmall">Sesuai prosedur: minimal 15 menit setiap 3 jam mengemudi, atau bergantian pengemudi dengan mengganti DID Tag VT. Titik istirahat ditentukan otomatis pada rute; nilai tidak bisa di bawah batas prosedur.</p></div>
       <div class="jstatus" id="j-total"></div></section>
 
     <section class="jcard" id="j-auto"><h4>5. Hasil hitung otomatis <button type="button" class="jbtn" id="j-calc">⚡ Hitung ulang</button></h4><div id="j-status" class="jstatus">Isi titik berangkat dan tujuan; hasil muncul otomatis.</div><div id="j-out"></div></section>
@@ -138,22 +140,22 @@
   const val = (id) => { const e = $('#j-' + id); return e ? e.value : ''; };
   function setVal(id, v) { const e = $('#j-' + id); if (e && v != null) e.value = v; }
   function fillForm() {
-    ['plat', 'inspeksiCatatan', 'barangRinci', 'catatan'].forEach((k) => setVal(k, S[k] || ''));
+    ['plat', 'inspeksiCatatan', 'vtCatatan', 'barangRinci', 'catatan'].forEach((k) => setVal(k, S[k] || ''));
     setVal('tanggal', S.dateISO); setVal('berangkat', S.departTime); $('#j-roundTrip').checked = !!S.roundTrip;
-    ['partner', 'inspeksi', 'kondisi', 'lebar', 'permukaan'].forEach((n) => $$(`input[name="j-${n}"]`).forEach((i) => { i.checked = i.value === S[n]; }));
+    ['partner', 'inspeksi', 'vt', 'kondisi', 'lebar', 'permukaan'].forEach((n) => $$(`input[name="j-${n}"]`).forEach((i) => { i.checked = i.value === S[n]; }));
     ['jalur', 'kendaraan', 'jenisJalan', 'barang'].forEach((n) => $$(`input[name="j-${n}"]`).forEach((i) => { i.checked = (S[n] || []).includes(i.value); }));
     setVal('intervalJam', S.intervalJam); setVal('restMenit', S.restMenit); renderAkt(); updateUsia();
   }
   function readForm() {
-    ['plat', 'inspeksiCatatan', 'barangRinci', 'catatan'].forEach((k) => { S[k] = val(k).trim(); });
+    ['plat', 'inspeksiCatatan', 'vtCatatan', 'barangRinci', 'catatan'].forEach((k) => { S[k] = val(k).trim(); });
     S.dateISO = val('tanggal') || todayISO(); S.departTime = val('berangkat') || '07:00'; S.roundTrip = $('#j-roundTrip').checked; S.plat = S.plat.toUpperCase();
-    ['partner', 'inspeksi', 'kondisi', 'lebar', 'permukaan'].forEach((n) => { const c = $(`input[name="j-${n}"]:checked`); S[n] = c ? c.value : ''; });
+    ['partner', 'inspeksi', 'vt', 'kondisi', 'lebar', 'permukaan'].forEach((n) => { const c = $(`input[name="j-${n}"]:checked`); S[n] = c ? c.value : ''; });
     ['jalur', 'kendaraan', 'jenisJalan', 'barang'].forEach((n) => { S[n] = $$(`input[name="j-${n}"]:checked`).map((i) => i.value); });
     const rows = (sel, unit) => $$(sel + ' .jakt').map((r) => ({ nama: $('.an', r).value.trim(), menit: $('.am', r).value.trim() ? Math.round(parseFloat($('.am', r).value.replace(',', '.')) * unit) : '' }));
     S.aktivitas = rows('#j-akt', 60); S.istirahat = rows('#j-ist', 1);
-    S.intervalJam = Math.min(4, Math.max(1, parseFloat(val('intervalJam').replace(',', '.')) || 2)); S.restMenit = Math.min(120, Math.max(10, parseInt(val('restMenit'), 10) || 30));
+    S.intervalJam = Math.min(3, Math.max(1, parseFloat(val('intervalJam').replace(',', '.')) || 3)); S.restMenit = Math.min(120, Math.max(15, parseInt(val('restMenit'), 10) || 15));
   }
-  function updateUsia() { readForm(); const w = $('#j-inspWrap'); if (w) w.hidden = S.inspeksi !== 'tidak'; const ie = $('#j-usia'); if (ie) { ie.textContent = S.inspeksi === 'tidak' ? '⚠ Kendaraan tidak aman: jangan berangkat sebelum diperbaiki atau diganti.' : ''; ie.className = 'jsmall jwarn'; } const t = (S.aktivitas.concat(S.istirahat)).reduce((n, x) => n + (+x.menit || 0), 0); const e = $('#j-total'); if (e) e.textContent = t ? `Total waktu di lokasi (pekerjaan + istirahat): ${C.minToHM(t)}` : ''; }
+  function updateUsia() { readForm(); const w = $('#j-inspWrap'); if (w) w.hidden = S.inspeksi !== 'tidak'; const vw = $('#j-vtWrap'); if (vw) vw.hidden = S.vt !== 'tidak'; const ie = $('#j-usia'); if (ie) { ie.textContent = [S.inspeksi === 'tidak' && '⚠ Kendaraan tidak aman: jangan berangkat sebelum diperbaiki atau diganti.', S.vt === 'tidak' && '⚠ VT Device tidak aman: laporkan dan perbaiki sebelum berangkat.'].filter(Boolean).join(' '); ie.className = 'jsmall jwarn'; } const t = (S.aktivitas.concat(S.istirahat)).reduce((n, x) => n + (+x.menit || 0), 0); const e = $('#j-total'); if (e) e.textContent = t ? `Total waktu di lokasi (pekerjaan + istirahat): ${C.minToHM(t)}` : ''; }
   function renderList(sel, key, unit, ph, uph) {
     const box = $(sel); box.innerHTML = '';
     (S[key].length ? S[key] : [{ nama: '', menit: '' }]).forEach((a, i) => {
@@ -241,7 +243,7 @@
   }
   function render() {
     const p = A.plan, r = A.risk; if (!p) return;
-    const hardStop = [S.kondisi === 'tutup' && 'Jalan ditandai tidak dapat dilalui.', S.inspeksi === 'tidak' && 'Kendaraan dinyatakan tidak aman.'].filter(Boolean);
+    const hardStop = [S.kondisi === 'tutup' && 'Jalan ditandai tidak dapat dilalui.', S.inspeksi === 'tidak' && 'Kendaraan dinyatakan tidak aman.', S.vt === 'tidak' && 'VT Device tidak berfungsi dengan aman.'].filter(Boolean);
     $('#j-out').innerHTML = `
       ${hardStop.length ? `<div class="jalert">⛔ Perjalanan tidak boleh dilakukan: ${hardStop.join(' ')} Pilih rute lain atau tunda.</div>` : ''}
       <div class="jstats">
@@ -256,7 +258,7 @@
       ${routeSVG()}<div class="jsmall">A = berangkat, B = tujuan, angka = titik istirahat. Sketsa tanpa peta dasar; <a target="_blank" rel="noopener noreferrer" href="${A.mapsUrl}">buka rute di Google Maps</a>.</div>
       <div id="j-sched"></div>
       <h5>Cuaca &amp; kualitas udara</h5>${wxTable()}
-      <details class="jdet"><summary>Cara waktu tempuh dihitung</summary><p>Waktu dari data rute ${C.minToHM(A.route.minRaw)} × faktor ${String(A.factor.toFixed(2)).replace('.', ',')} = ${C.minToHM(p.D)}. Faktor: ${esc(A.timeWhy.join('; '))}. Aturan istirahat: ${p.rest} menit setiap ${p.interval / 60} jam mengemudi. Ubah isian transportasi bila faktanya berbeda; jalan khusus (hauling, logging) sering tidak ada di peta umum sehingga angka ini perlu dikoreksi.</p></details>
+      <details class="jdet"><summary>Cara waktu tempuh dihitung</summary><p>Waktu dari data rute ${C.minToHM(A.route.minRaw)} × faktor ${String(A.factor.toFixed(2)).replace('.', ',')} = ${C.minToHM(p.D)}. Faktor: ${esc(A.timeWhy.join('; '))}. Aturan istirahat: minimal ${p.rest} menit setiap ${p.interval / 60} jam mengemudi, atau bergantian pengemudi dengan mengganti DID Tag VT. Ubah isian transportasi bila faktanya berbeda; jalan khusus (hauling, logging) sering tidak ada di peta umum sehingga angka ini perlu dikoreksi.</p></details>
       <h5>Penilaian risiko: <span class="jrisk ${r.final}">${r.final === 'tinggi' ? 'RISIKO BAHAYA TINGGI' : 'RISIKO BAHAYA RENDAH'}</span> <small>(skor ${r.score}; usulan otomatis: ${r.level === 'tinggi' ? 'tinggi' : 'rendah'})</small></h5>
       <ul class="jfac">${r.factors.length ? r.factors.map((f) => `<li><b>+${f.pts}</b> ${esc(f.text)}</li>`).join('') : '<li>Tidak ada faktor risiko menonjol terdeteksi.</li>'}</ul>
       <div class="jf"><span>Tetapkan risiko (atasan dapat mengubah saat persetujuan online)</span><div class="jchips"><label class="jchip"><input type="radio" name="j-risk" value="rendah" ${r.final === 'rendah' ? 'checked' : ''}><span>Rendah</span></label><label class="jchip"><input type="radio" name="j-risk" value="tinggi" ${r.final === 'tinggi' ? 'checked' : ''}><span>Tinggi</span></label></div></div>
@@ -281,7 +283,7 @@
   /* ---------- model & unduhan ---------- */
   function model() {
     readForm();
-    const miss = []; if (!S.plat) miss.push('plat nomor'); if (!S.inspeksi) miss.push('hasil inspeksi kendaraan'); if (S.inspeksi === 'tidak' && !S.inspeksiCatatan) miss.push('catatan inspeksi'); if (!origin) miss.push('titik berangkat'); if (!dest) miss.push('titik tujuan');
+    const miss = []; if (!S.plat) miss.push('plat nomor'); if (!S.inspeksi) miss.push('hasil inspeksi kendaraan'); if (!S.vt) miss.push('fungsi VT Device'); if (S.vt === 'tidak' && !S.vtCatatan) miss.push('catatan VT Device'); if (S.inspeksi === 'tidak' && !S.inspeksiCatatan) miss.push('catatan inspeksi'); if (!origin) miss.push('titik berangkat'); if (!dest) miss.push('titik tujuan');
     if (miss.length) { J.toast('Lengkapi dulu: ' + miss.join(', ') + '.'); return null; }
     if (!A.plan) { J.toast('Hasil otomatis belum siap. Tunggu sebentar atau tekan Hitung ulang.'); return null; }
     A.risk.final = S.riskManual || A.risk.final;
@@ -331,7 +333,7 @@
     $('#j-now').onclick = () => { const d = new Date(); $('#j-berangkat').value = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; $('#j-tanggal').value = todayISO(); schedule(0); };
     $('#j-calc').onclick = () => { cache.wx.clear(); calc(); };
     $('#j-pdf').onclick = (e) => doPDF(e.currentTarget); $('#j-docx').onclick = (e) => doDOCX(e.currentTarget); $('#j-wa').onclick = doWA;
-    $('#j-reset').onclick = () => { if (!confirm('Kosongkan semua isian JRM?')) return; Object.assign(S, { aktivitas: [{ nama: '', menit: '' }], istirahat: [{ nama: 'Makan siang dan ibadah', menit: 60 }], intervalJam: 2, restMenit: 30, plat: '', inspeksi: '', inspeksiCatatan: '', riskManual: null, pesanEdited: false, permukaanManual: false, plat: '', inspeksi: '', inspeksiCatatan: '', barangRinci: '', catatan: '' }); origin = dest = null; A = {}; ['asal', 'tujuan'].forEach((w) => { $('#j-' + w).value = ''; showPoint(w, null); }); $('#j-pesan').value = ''; $('#j-out').innerHTML = ''; fillForm(); };
+    $('#j-reset').onclick = () => { if (!confirm('Kosongkan semua isian JRM?')) return; Object.assign(S, { aktivitas: [{ nama: '', menit: '' }], istirahat: [{ nama: 'Makan siang dan ibadah', menit: 60 }], intervalJam: 3, restMenit: 15, plat: '', inspeksi: '', inspeksiCatatan: '', vt: '', vtCatatan: '', riskManual: null, pesanEdited: false, permukaanManual: false, plat: '', inspeksi: '', inspeksiCatatan: '', vt: '', vtCatatan: '', barangRinci: '', catatan: '' }); origin = dest = null; A = {}; ['asal', 'tujuan'].forEach((w) => { $('#j-' + w).value = ''; showPoint(w, null); }); $('#j-pesan').value = ''; $('#j-out').innerHTML = ''; fillForm(); };
   }
   function open() { build(); fillForm(); const m = $('#modalJrm'); m.hidden = false; const f = $('#j-plat'); setTimeout(() => f && !f.value && f.focus(), 40); J.Mascot.play('present', 2600); }
   window.JASMIN_JRM = { open };

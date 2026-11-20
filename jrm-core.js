@@ -118,7 +118,7 @@
 
   /* ---------- jadwal istirahat, tiba, menginap ---------- */
   function planTrip(p) {
-    const interval = p.intervalMin || 120, rest = p.restMin || 30, maxDrive = p.maxDriveMin || 480;
+    const interval = p.intervalMin || 180, rest = p.restMin || 15, maxDrive = p.maxDriveMin || 480;
     const dep = mkDate(p.dateISO, p.departTime);
     const D = Math.max(1, Math.round(p.driveMin));
     const sunrise = parseHM(p.sunrise, 360), sunset = parseHM(p.sunset, 1080);
@@ -180,7 +180,7 @@
     if (km > 300) add(2, `Jarak jauh (${Math.round(km)} km sekali jalan)`, 'Rencanakan rute dan titik istirahat; laporkan posisi tiap istirahat.');
     else if (km > 150) add(1, `Jarak menengah (${Math.round(km)} km)`, 'Laporkan posisi saat berangkat, istirahat, dan tiba.');
     if (plan && plan.D > 360) add(2, `Mengemudi lebih dari 6 jam (${minToHM(plan.D)})`, 'Pertimbangkan pengemudi pendamping atau menginap; jangan memaksa menyelesaikan dalam sehari.');
-    else if (plan && plan.D > 240) add(1, `Mengemudi lebih dari 4 jam (${minToHM(plan.D)})`, 'Patuhi istirahat 30 menit setiap 2 jam mengemudi.');
+    else if (plan && plan.D > 240) add(1, `Mengemudi lebih dari 4 jam (${minToHM(plan.D)})`, 'Patuhi prosedur: istirahat minimal 15 menit setiap 3 jam mengemudi, atau bergantian pengemudi (ganti DID Tag VT).');
     if (plan && (plan.warn.some((w) => /gelap|terbenam/.test(w)))) add(2, 'Berangkat atau tiba di waktu gelap', 'Hindari mengemudi malam; geser jam berangkat atau menginap sebelum matahari terbenam.');
     if ((s.jenisJalan || []).some((k) => ['logging', 'berbatu', 'gambut'].includes(k))) add(2, 'Jalan logging/berbatu/gambut', 'Kurangi kecepatan, jaga jarak lebih jauh, cek ban dan suspensi, bawa alat tarik/recovery.');
     else if ((s.jenisJalan || []).includes('tanah')) add(1, 'Jalan tanah', 'Waspadai licin saat hujan; kurangi kecepatan; tidak melintas genangan yang tidak diketahui kedalamannya.');
@@ -192,6 +192,7 @@
     if ((s.barang || []).includes('mesin')) add(1, 'Membawa mesin / unit berat', 'Ikat dengan tali/ratchet yang layak, jangan sentuhkan ke kaca kabin, periksa ikatan tiap istirahat.');
     if (s.partner === 'sendiri' && km > 150) add(1, 'Mengemudi sendirian pada jarak jauh', 'Aktifkan lapor posisi berkala; beri tahu atasan jam tiba.');
     if ((s.jalur || []).some((k) => ['laut', 'sungai', 'udara'].includes(k))) add(1, 'Perjalanan melibatkan moda laut/sungai/udara', 'Pakai jaket pelampung/ikuti prosedur moda; pastikan jadwal dan cuaca layak.');
+    if (s.vt === 'tidak') add(3, 'Fungsi VT Device tidak aman' + (s.vtCatatan ? ' (' + s.vtCatatan + ')' : ''), 'Laporkan ke atasan/penanggung jawab VT dan perbaiki sebelum berangkat; perjalanan tanpa VT berfungsi tidak dianjurkan.');
     if (s.inspeksi === 'tidak') add(5, 'Hasil inspeksi kendaraan: tidak aman' + (s.inspeksiCatatan ? ' (' + s.inspeksiCatatan + ')' : ''), 'Jangan berangkat sebelum temuan diperbaiki dan kendaraan dinyatakan layak; gunakan kendaraan pengganti.');
     (a.weather || []).forEach((w) => {
       if (!w || !w.d) return;
@@ -212,7 +213,7 @@
   const STD_SAFETY = [
     'Lakukan pemeriksaan kendaraan sebelum berangkat (P2H): ban, rem, lampu, klakson, wiper, bahan bakar, dan APAR.',
     'Gunakan sabuk pengaman; dilarang memakai ponsel saat mengemudi; patuhi batas kecepatan.',
-    'Istirahat 30 menit setiap 2 jam mengemudi; berhenti dan tidur sejenak bila mengantuk.',
+    'Istirahat minimal 15 menit setiap 3 jam mengemudi, atau bergantian pengemudi dengan mengganti DID Tag VT; berhenti dan tidur sejenak bila mengantuk.',
     'Laporkan posisi ke atasan saat berangkat, setiap istirahat, dan setibanya di tujuan.',
     'Barang dan perkakas diikat kuat; jangan menumpuk di dekat kaca kabin.',
     'Bila terjadi gangguan atau kecelakaan: hentikan kendaraan di tempat aman, nyalakan hazard, pasang segitiga pengaman, hubungi atasan dan nomor darurat 112.',
@@ -229,6 +230,7 @@
       ['Tanggal', s.dateISO ? dayName(mkDate(s.dateISO, '00.00')) : '-'], ['Tujuan', a.destLabel || s.tujuan || '-'],
       ['Kendaraan yang digunakan', mark(s.kendaraan, 'k', 'kendaraan') + (s.kendaraanLain ? `   (${s.kendaraanLain})` : '')], ['Plat nomor', s.plat || '-'],
       ['Partner', one(s.partner, 'partner')], ['Hasil inspeksi kendaraan', (s.inspeksi === 'aman' ? '[x] Aman   [ ] Tidak aman' : s.inspeksi === 'tidak' ? '[ ] Aman   [x] Tidak aman' : '[ ] Aman   [ ] Tidak aman') + (s.inspeksi === 'tidak' ? `   Catatan: ${s.inspeksiCatatan || '-'}` : '')],
+      ['Fungsi VT Device', (s.vt === 'aman' ? '[x] Aman   [ ] Tidak aman' : s.vt === 'tidak' ? '[ ] Aman   [x] Tidak aman' : '[ ] Aman   [ ] Tidak aman') + (s.vt === 'tidak' ? `   Catatan: ${s.vtCatatan || '-'}` : '')], ['', ''],
     ];
     const transport = [
       ['Jalur yang dilalui', mark(s.jalur, 'jalur', 'jalur')],
@@ -241,7 +243,7 @@
       ['Titik berangkat', a.originLabel || '-'], ['Titik tujuan', a.destLabel || '-'],
       ['Jarak tempuh', a.distKm ? `${a.distKm.toFixed(1).replace('.', ',')} km sekali jalan${s.roundTrip ? ` (pulang-pergi ±${total.toFixed(1).replace('.', ',')} km)` : ''}` : '-'],
       ['Risiko perjalanan', risk ? (risk.final === 'tinggi' ? '[ ] Risiko bahaya rendah   [x] Risiko bahaya tinggi' : '[x] Risiko bahaya rendah   [ ] Risiko bahaya tinggi') : '-'],
-      ['Waktu tempuh', plan ? `${minToHM(plan.D)} mengemudi (+ ${plan.nBreaks} x ${plan.rest} menit istirahat, setiap ${plan.interval / 60} jam mengemudi)` : '-'],
+      ['Waktu tempuh', plan ? `${minToHM(plan.D)} mengemudi (+ ${plan.nBreaks} x ${plan.rest} menit istirahat, setiap ${plan.interval / 60} jam mengemudi; atau bergantian pengemudi dengan mengganti DID Tag VT)` : '-'],
       ['Waktu berangkat', plan ? `Pukul ${hhmm(plan.dep)}` : '-'], ['Waktu tiba (estimasi)', plan ? `Pukul ${hhmm(plan.arrive)}` : '-'],
     ];
     if (plan && plan.ret) detail.push(['Perkiraan kembali', `Berangkat ${hhmm(plan.ret.depart)}, tiba ${hhmm(plan.ret.arrive)}`]);
