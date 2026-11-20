@@ -47,10 +47,10 @@ Menu **ID | EN | 🔇** di bagian atas chat memilih bahasa suara. Teh JASMIN han
 - Suara baru berbunyi setelah pengguna berinteraksi (aturan browser), jadi sapaan pembuka saat halaman dibuka tidak dibacakan.
 
 ## Musik latar (BGM)
-Musik corporate ringan berputar terus (loop). Tombol **🎵** di bagian atas chat menyalakan/mematikan; pilihan tersimpan. Volume otomatis mengecil saat Teh JASMIN berbicara.
-- Musiknya **dibuat langsung oleh browser** (Web Audio: pad, bass, arpeggio, ketukan lembut), jadi **orisinil dan bebas lisensi**, tanpa file audio dan tanpa risiko hak cipta.
+Musik latar **"Ukulele Song"** (`assets/bgm.mp3`, FreePD.com, domain publik **CC0 1.0** — bebas lisensi; kredit di `assets/CREDITS.txt`) berputar terus (loop). Tombol **🎵** di bagian atas chat menyalakan/mematikan; pilihan tersimpan. Volume otomatis mengecil saat Teh JASMIN berbicara.
 - Browser melarang suara otomatis sebelum pengguna menyentuh halaman. Musik mulai pada klik/ketukan pertama; tombol 🎵 berdenyut sampai musik mulai.
-- Ingin musik lain? Taruh file **`assets/bgm.mp3`** (pastikan lisensinya jelas, mis. CC0 atau musik berlisensi perusahaan). Bila file itu ada, otomatis dipakai menggantikan musik buatan browser.
+- Ganti lagu: timpa `assets/bgm.mp3` dengan file MP3 lain (pastikan lisensinya jelas). Pilihan lagu CC0 lain ada di repo `Rochiki/ocioci` (file `bgm-*.mp3`).
+- Bila `assets/bgm.mp3` dihapus, otomatis dipakai musik corporate sintesis bawaan browser (tanpa file, orisinil).
 
 ## Terjemahan Indonesia → English
 - Tiap balasan bot punya tombol kecil **🌐 English**; di bawah tabel JSEA ada tombol **🌐 English / Indonesia**. Klik lagi untuk kembali ke Indonesia.
