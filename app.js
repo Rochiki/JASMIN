@@ -1028,7 +1028,7 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
      6. QSHE INFO & UPDATE (qshe-updates.json)
      ====================================================================== */
   const FALLBACK_UPDATES = { kartu: [
-    { id: 'safety-moment', judul: 'Safety Moment', ikon: '🦺', tag: 'Update: Nov 2026', teks: 'Wajib inspeksi harian APD sebelum masuk area galian.', rotasi: [], tema: 'krem' },
+    { id: 'safety-moment', judul: 'Safety Moment', ikon: '🦺', tag: 'Update: Nov 2026', teks: 'Memasuki musim hujan, waspada jalanan licin! Kurangi kecepatan, jaga jarak aman kendaraan!', rotasi: [], tema: 'krem' },
     { id: 'info-cuaca', judul: 'Info Cuaca & Area', ikon: '🌧️', tag: '', teks: 'Waspada jalan licin di Zona B saat hujan ringan.', rotasi: [], tema: 'biru' },
     { id: 'pengingat-jsea', judul: 'Pengingat JSEA', ikon: '📋', tag: '', teks: 'Pastikan JSEA ditandatangani pengawas sebelum shift dimulai.', rotasi: [], tema: 'peach' },
   ] };
