@@ -46,6 +46,12 @@ Menu **ID | EN | 🔇** di bagian atas chat memilih bahasa suara. Teh JASMIN han
 - Kualitas suara tergantung browser/perangkat: Chrome & Edge (Windows/Android) biasanya punya suara Indonesia perempuan. Bila tidak ada suara perempuan, dipakai suara bahasa itu yang tersedia.
 - Suara baru berbunyi setelah pengguna berinteraksi (aturan browser), jadi sapaan pembuka saat halaman dibuka tidak dibacakan.
 
+## Musik latar (BGM)
+Musik corporate ringan berputar terus (loop). Tombol **🎵** di bagian atas chat menyalakan/mematikan; pilihan tersimpan. Volume otomatis mengecil saat Teh JASMIN berbicara.
+- Musiknya **dibuat langsung oleh browser** (Web Audio: pad, bass, arpeggio, ketukan lembut), jadi **orisinil dan bebas lisensi**, tanpa file audio dan tanpa risiko hak cipta.
+- Browser melarang suara otomatis sebelum pengguna menyentuh halaman. Musik mulai pada klik/ketukan pertama; tombol 🎵 berdenyut sampai musik mulai.
+- Ingin musik lain? Taruh file **`assets/bgm.mp3`** (pastikan lisensinya jelas, mis. CC0 atau musik berlisensi perusahaan). Bila file itu ada, otomatis dipakai menggantikan musik buatan browser.
+
 ## Terjemahan Indonesia → English
 - Tiap balasan bot punya tombol kecil **🌐 English**; di bawah tabel JSEA ada tombol **🌐 English / Indonesia**. Klik lagi untuk kembali ke Indonesia.
 - Setelah diterjemahkan, tabel yang diunduh (PDF, Excel, CSV, Salin) ikut berbahasa Inggris.

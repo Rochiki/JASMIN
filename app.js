@@ -119,6 +119,8 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
       u.lang = lang === 'id' ? 'id-ID' : 'en-US';
       if (v) { u.voice = v; u.lang = v.lang; }
       u.pitch = 1.12; u.rate = 1.0; u.volume = 1;
+      u.onstart = () => Bgm.duck(true);
+      u.onend = u.onerror = () => Bgm.duck(false);
       synth.speak(u);
     }
     function set(l) {
@@ -133,6 +135,129 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     return { speak, stop, get lang() { return lang; }, firstSentence };
   })();
 
+
+
+  /* ======================================================================
+     1d. MUSIK LATAR (BGM) — corporate, loop terus, dibuat langsung oleh browser (Web Audio)
+         Musik sintesis orisinil: bebas lisensi, tanpa file audio. Bila ada assets/bgm.mp3, file itu dipakai.
+     ====================================================================== */
+  const Bgm = (() => {
+    const btn = $('#bgmBtn');
+    let on = store.get('jasmin.bgm', true), ctx = null, out = null, duckG = null, timer = null, started = false;
+    let nextBar = 0, barIdx = 0, noiseBuf = null, fileEl = null, useFile = null, ducked = false;
+    const BPM = 92, BEAT = 60 / BPM, BAR = BEAT * 4;
+    const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+    // Cmaj7 -> G/B -> Am7 -> Fmaj7 (progresi I-V-vi-IV yang hangat & "korporat")
+    const PAD = [[60, 64, 67, 71], [59, 62, 67, 74], [57, 60, 64, 67], [57, 60, 65, 69]];
+    const BASS = [48, 47, 45, 41];
+    const ARP = [0, 2, 1, 3, 2, 3, 1, 2];
+
+    function paint() {
+      btn.setAttribute('aria-pressed', String(on));
+      btn.title = on ? 'Musik latar: aktif (klik untuk mematikan)' : 'Musik latar: mati (klik untuk menyalakan)';
+      btn.classList.toggle('wait', on && !started);
+    }
+    function env(g, t, a, peak, hold, rel) {
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + a);
+      g.gain.setValueAtTime(peak, t + a + hold); g.gain.exponentialRampToValueAtTime(0.0001, t + a + hold + rel);
+    }
+    function build() {
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+      ctx = new AC();
+      const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 3;
+      duckG = ctx.createGain(); duckG.gain.value = 0.0001;
+      out = ctx.createGain(); out.gain.value = 0.55;
+      out.connect(comp); comp.connect(duckG); duckG.connect(ctx.destination);
+      // gema lembut (delay + low-pass) untuk suasana "luas"
+      const dl = ctx.createDelay(1); dl.delayTime.value = BEAT * 0.75;
+      const fb = ctx.createGain(); fb.gain.value = 0.34;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400;
+      const wet = ctx.createGain(); wet.gain.value = 0.5;
+      dl.connect(lp); lp.connect(fb); fb.connect(dl); lp.connect(wet); wet.connect(out);
+      ctx.__send = dl;
+      const n = ctx.sampleRate * 0.25; noiseBuf = ctx.createBuffer(1, n, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      const an = ctx.createAnalyser(); an.fftSize = 512; comp.connect(an); ctx.__an = an;
+      return true;
+    }
+    function bar(t, i) {
+      const chord = PAD[i % 4], bass = BASS[i % 4];
+      // pad: dua osilator tipis per nada, naik pelan & lepas pelan
+      const padF = ctx.createBiquadFilter(); padF.type = 'lowpass'; padF.frequency.value = 1400; padF.connect(out);
+      chord.forEach((m) => [['sine', -5], ['triangle', 6]].forEach(([type, cents]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = mtof(m); o.detune.value = cents;
+        env(g, t, 0.7, 0.03, BAR - 0.5, 1.1); o.connect(g); g.connect(padF); o.start(t); o.stop(t + BAR + 1.4);
+      }));
+      // bass: nada akar pada ketukan 1 & 3
+      [0, 2].forEach((b) => {
+        const tt = t + b * BEAT, o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = mtof(bass);
+        env(g, tt, 0.015, 0.2, BEAT * 1.1, 0.35); o.connect(g); g.connect(out); o.start(tt); o.stop(tt + BEAT * 1.9);
+      });
+      // kick lembut ketukan 1 & 3
+      [0, 2].forEach((b) => {
+        const tt = t + b * BEAT, o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine';
+        o.frequency.setValueAtTime(110, tt); o.frequency.exponentialRampToValueAtTime(42, tt + 0.14);
+        g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(0.22, tt + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, tt + 0.22);
+        o.connect(g); g.connect(out); o.start(tt); o.stop(tt + 0.25);
+      });
+      // hi-hat tipis pada ketukan "and"
+      for (let k = 0; k < 8; k++) {
+        if (k % 2 === 0) continue;
+        const tt = t + k * BEAT / 2, s = ctx.createBufferSource(), hp = ctx.createBiquadFilter(), g = ctx.createGain();
+        s.buffer = noiseBuf; hp.type = 'highpass'; hp.frequency.value = 7000;
+        g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(0.05, tt + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, tt + 0.07);
+        s.connect(hp); hp.connect(g); g.connect(out); s.start(tt); s.stop(tt + 0.1);
+      }
+      // arpeggio pluk (ceria tapi tidak mengganggu)
+      ARP.forEach((idx, k) => {
+        const tt = t + k * BEAT / 2, o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'triangle'; o.frequency.value = mtof(chord[idx] + 12);
+        g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(0.085, tt + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, tt + 0.5);
+        o.connect(g); g.connect(out); g.connect(ctx.__send); o.start(tt); o.stop(tt + 0.55);
+      });
+    }
+    function tick() { while (nextBar < ctx.currentTime + 0.7) { bar(nextBar, barIdx++); nextBar += BAR; } }
+    function fade(to, sec) {
+      const t = ctx.currentTime; duckG.gain.cancelScheduledValues(t); duckG.gain.setValueAtTime(Math.max(0.0001, duckG.gain.value), t);
+      duckG.gain.linearRampToValueAtTime(Math.max(0.0001, to), t + sec);
+    }
+    async function checkFile() {
+      if (useFile !== null) return useFile;
+      try { const r = await fetch('assets/bgm.mp3', { method: 'HEAD', cache: 'no-store' }); useFile = r.ok && /audio|octet/.test(r.headers.get('content-type') || 'audio'); } catch { useFile = false; }
+      return useFile;
+    }
+    async function start() {
+      if (!on || started) return;
+      if (await checkFile()) {
+        fileEl = fileEl || Object.assign(new Audio('assets/bgm.mp3'), { loop: true, volume: 0.22 });
+        try { await fileEl.play(); started = true; paint(); } catch { /* menunggu interaksi berikutnya */ }
+        return;
+      }
+      if (!ctx && !build()) return;
+      try { await ctx.resume(); } catch { return; }
+      if (ctx.state !== 'running') return;
+      started = true; nextBar = ctx.currentTime + 0.1; barIdx = 0; tick(); timer = setInterval(tick, 150);
+      fade(1, 2.5); paint();
+    }
+    function stop() {
+      if (fileEl) fileEl.pause();
+      if (ctx && started) { fade(0.0001, 0.5); setTimeout(() => { if (!on) { clearInterval(timer); timer = null; ctx.suspend(); started = false; paint(); } }, 600); }
+      else started = false;
+    }
+    function set(v) { on = v; store.set('jasmin.bgm', v); paint(); if (v) { if (ctx && ctx.state === 'suspended' && !timer) started = false; start(); } else stop(); }
+    function duck(d) {
+      ducked = d;
+      if (fileEl) fileEl.volume = d ? 0.07 : 0.22;
+      if (ctx && started && on) fade(d ? 0.28 : 1, d ? 0.25 : 0.8);
+    }
+    // browser baru mengizinkan suara setelah interaksi pertama: musik otomatis mulai saat itu
+    const kick = () => { if (!started && on) start(); if (started) { ['pointerdown', 'keydown', 'touchstart', 'click'].forEach((ev) => document.removeEventListener(ev, kick, true)); } };
+    ['pointerdown', 'keydown', 'touchstart', 'click'].forEach((ev) => document.addEventListener(ev, kick, true));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && on && ctx && ctx.state === 'suspended' && started) ctx.resume(); });
+    btn.addEventListener('click', (e) => { e.stopPropagation(); set(!on); });
+    paint();
+    if (on) start();     // berhasil langsung bila browser mengizinkan autoplay
+    return { set, duck, start, get on() { return on; }, get started() { return started; }, get ctx() { return ctx; } };
+  })();
 
   /* ======================================================================
      1c. TERJEMAHAN ID -> EN (Chrome Translator on-device, atau Gemini bila Mode Cerdas aktif)
@@ -882,5 +1007,5 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
   }
 
   /* ---- API untuk export.js ---- */
-  window.JASMIN = { NOVERIFY, Voice, CONFIG, WA_URL, DB, buildForm, cellText, todayISO, todayLong, toast, Mascot, store, esc, plain, PV, NOENV, respond, search, genericize };
+  window.JASMIN = { Bgm, NOVERIFY, Voice, CONFIG, WA_URL, DB, buildForm, cellText, todayISO, todayLong, toast, Mascot, store, esc, plain, PV, NOENV, respond, search, genericize };
 })();

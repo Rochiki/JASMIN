@@ -326,3 +326,19 @@ legend{font-weight:900;font-size:13.5px;padding:0 6px}
 
 .tr-msg{display:block;margin:8px 0 0 auto;border:0;background:transparent;color:#7a4a1c;font-weight:800;font-size:12px;cursor:pointer;padding:2px 4px;text-decoration:underline dotted}
 .tr-msg:hover{color:var(--orange-d,#c2410c)}.tr-msg:disabled{opacity:.6}
+
+.bgm-wrap{margin-left:6px;padding:3px 4px}
+.bgm-wrap button{font-size:15px;line-height:1;padding:4px 8px;position:relative}
+.bgm-wrap button[aria-pressed="false"]{background:transparent;color:#999;opacity:.6}
+.bgm-wrap button[aria-pressed="false"]::after{content:"";position:absolute;left:20%;right:20%;top:50%;border-top:2.5px solid #c0392b;transform:rotate(-35deg)}
+.bgm-wrap button[aria-pressed="true"].wait{animation:bgmPulse 1.6s ease-in-out infinite}
+@keyframes bgmPulse{50%{box-shadow:0 0 0 5px rgba(249,115,22,.35)}}
+@media (max-width:720px){.bgm-wrap{margin-left:4px}.bgm-wrap button{padding:3px 6px;font-size:14px}}
+@media (prefers-reduced-motion:reduce){.bgm-wrap button.wait{animation:none}}
+@media (max-width:430px){
+  .topbar{gap:6px}.topbar h2{font-size:15px;line-height:1.05}
+  .wa-badge{padding:4px 8px 4px 5px;gap:6px;min-width:0;flex:0 1 auto}
+  .wa-txt b{font-size:12px;line-height:1.05;white-space:normal}
+  .wa-txt small,.wa-txt em{display:none}
+  .voice{margin-left:2px}.voice button{padding:3px 5px}
+}
