@@ -192,8 +192,7 @@
     if ((s.barang || []).includes('mesin')) add(1, 'Membawa mesin / unit berat', 'Ikat dengan tali/ratchet yang layak, jangan sentuhkan ke kaca kabin, periksa ikatan tiap istirahat.');
     if (s.partner === 'sendiri' && km > 150) add(1, 'Mengemudi sendirian pada jarak jauh', 'Aktifkan lapor posisi berkala; beri tahu atasan jam tiba.');
     if ((s.jalur || []).some((k) => ['laut', 'sungai', 'udara'].includes(k))) add(1, 'Perjalanan melibatkan moda laut/sungai/udara', 'Pakai jaket pelampung/ikuti prosedur moda; pastikan jadwal dan cuaca layak.');
-    if (s.kim === 'tidak') add(3, 'Belum memiliki izin mengemudi internal (KIM)', 'Tidak boleh mengemudi kendaraan operasional sebelum izin dimiliki; gunakan pengemudi berizin.');
-    if (s.simExpired) add(3, 'Masa berlaku SIM sudah lewat sebelum/di tanggal perjalanan', 'Perpanjang SIM; jangan mengemudi sebelum SIM berlaku.');
+    if (s.inspeksi === 'tidak') add(5, 'Hasil inspeksi kendaraan: tidak aman' + (s.inspeksiCatatan ? ' (' + s.inspeksiCatatan + ')' : ''), 'Jangan berangkat sebelum temuan diperbaiki dan kendaraan dinyatakan layak; gunakan kendaraan pengganti.');
     (a.weather || []).forEach((w) => {
       if (!w || !w.d) return;
       if (w.d.precip >= 5 || (w.d.pop >= 80 && w.d.precip >= 2)) add(2, `Hujan lebat di ${w.label}`, 'Kurangi kecepatan, nyalakan lampu, tunda perjalanan bila jarak pandang buruk.');
@@ -227,11 +226,12 @@
     const fmtD = (d) => (d ? dayName(d) : '');
     const mapsUrl = a.mapsUrl || '';
     const info = [
-      ['Tanggal', s.dateISO ? dayName(mkDate(s.dateISO, '00.00')) : '-'], ['Nama', s.nama || '-'],
-      ['Tujuan', a.destLabel || s.tujuan || '-'], ['Partner', one(s.partner, 'partner')],
+      ['Tanggal', s.dateISO ? dayName(mkDate(s.dateISO, '00.00')) : '-'], ['Tujuan', a.destLabel || s.tujuan || '-'],
+      ['Kendaraan yang digunakan', mark(s.kendaraan, 'k', 'kendaraan') + (s.kendaraanLain ? `   (${s.kendaraanLain})` : '')], ['Plat nomor', s.plat || '-'],
+      ['Partner', one(s.partner, 'partner')], ['Hasil inspeksi kendaraan', (s.inspeksi === 'aman' ? '[x] Aman   [ ] Tidak aman' : s.inspeksi === 'tidak' ? '[ ] Aman   [x] Tidak aman' : '[ ] Aman   [ ] Tidak aman') + (s.inspeksi === 'tidak' ? `   Catatan: ${s.inspeksiCatatan || '-'}` : '')],
     ];
     const transport = [
-      ['Jalur yang dilalui', mark(s.jalur, 'jalur', 'jalur')], ['Jenis kendaraan', mark(s.kendaraan, 'k', 'kendaraan') + (s.kendaraanLain ? `   (${s.kendaraanLain})` : '')],
+      ['Jalur yang dilalui', mark(s.jalur, 'jalur', 'jalur')],
       ['Jenis jalan yang dilalui', mark(s.jenisJalan, 'j', 'jenisJalan')], ['Kondisi jalan', one(s.kondisi, 'kondisi')],
       ['Lebar jalan', one(s.lebar, 'lebar')], ['Permukaan jalan', one(s.permukaan, 'permukaan') + (a.elev ? `   (usulan otomatis: naik total ±${Math.round(a.elev.gain)} m, tertinggi ±${Math.round(a.elev.max)} m)` : '')],
       ['Barang yang diangkut', mark(s.barang, 'b', 'barang') + (s.barangRinci ? `   ${s.barangRinci}` : '')],
@@ -260,7 +260,7 @@
       title: 'JOURNEY RISK MANAGEMENT (JRM)', createdAt: new Date(), info, transport, detail, rests, wx, acts, actTotal,
       risk: risk ? { level: risk.final, auto: risk.level, score: risk.score, factors: risk.factors } : null,
       safety, warn: plan ? plan.warn : [], latestDepart: plan && plan.latestDepart, mapsUrl, route: a.coords || [], timeFactorWhy: a.timeWhy || [],
-      catatan: s.catatan || '', fileName: `JRM_${safe(s.nama) || 'perjalanan'}_${s.dateISO || ''}`,
+      catatan: s.catatan || '', fileName: `JRM_${safe(s.plat) || 'perjalanan'}_${s.dateISO || ''}`,
     };
   }
   function wxText(d) {
