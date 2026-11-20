@@ -342,3 +342,57 @@ legend{font-weight:900;font-size:13.5px;padding:0 6px}
   .wa-txt small,.wa-txt em{display:none}
   .voice{margin-left:2px}.voice button{padding:3px 5px}
 }
+
+/* ---- widget cuaca / jam / kualitas udara ---- */
+.wx{flex:none;background:linear-gradient(160deg,#EAF6FD 0%,#FFF3E0 100%);border:2px solid var(--ink);border-radius:16px;padding:10px 12px 8px;color:var(--navy);box-shadow:3px 3px 0 rgba(0,0,0,.28);position:relative}
+.wx-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.wx-place{border:0;background:rgba(255,255,255,.7);border-radius:999px;padding:3px 9px;font-weight:900;font-size:13px;color:var(--navy);cursor:pointer;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wx-place i{font-style:normal;opacity:.55;font-size:11px}
+.wx-place:hover,.wx-place:focus-visible{background:#fff;outline:2px solid var(--orange);outline-offset:1px}
+.wx-clock{text-align:right;line-height:1.1}
+.wx-clock b{display:block;font-size:17px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.2px}
+.wx-clock small{font-size:10.5px;font-weight:700;opacity:.75}
+.wx-search{margin:8px 0 2px}
+.wx-row{display:flex;gap:6px}
+.wx-search input{flex:1;min-width:0;border:2px solid var(--ink);border-radius:10px;padding:6px 9px;font-size:13.5px;background:#fff}
+.wx-search button{border:2px solid var(--ink);background:var(--orange);border-radius:10px;padding:0 9px;cursor:pointer;font-size:15px}
+.wx-sug{list-style:none;margin:5px 0 0;padding:0;border-radius:10px;background:#fff;border:1.5px solid #b5ad9c;max-height:170px;overflow:auto}
+.wx-sug:empty{display:none}
+.wx-sug li{padding:6px 10px;cursor:pointer;font-size:13px;display:flex;flex-direction:column;border-bottom:1px solid #eee}
+.wx-sug li:last-child{border:0}.wx-sug li:hover{background:#FFF3E0}.wx-sug li small{opacity:.65;font-size:11px}.wx-sug li.none{cursor:default;opacity:.7}
+.wx-now{display:flex;align-items:center;gap:9px;margin:7px 0 4px;flex-wrap:wrap}
+.wx-ic{font-size:36px;line-height:1}
+.wx-tt b{display:block;font-size:26px;font-weight:900;line-height:1}
+.wx-tt small{font-size:12px;font-weight:700;opacity:.8}
+.wx-meta{display:flex;flex-direction:column;gap:1px;margin-left:auto;font-size:11.5px;font-weight:700;opacity:.85;text-align:right}
+.wx-aqi{background:rgba(255,255,255,.75);border-radius:11px;padding:7px 9px 6px;margin:4px 0}
+.aqi-row{display:flex;gap:9px;align-items:center}
+.aqi-badge{flex:none;min-width:38px;text-align:center;color:#fff;font-weight:900;font-size:16px;border-radius:9px;padding:4px 0;border:2px solid var(--ink)}
+.aqi-row b{display:block;font-size:12.5px;line-height:1.2}.aqi-row small{font-size:10.5px;opacity:.7;font-weight:700}
+.aqi-bar{height:6px;border-radius:99px;margin:6px 0 4px;position:relative;background:linear-gradient(90deg,#2e9e4f 0 17%,#d4a017 17% 33%,#ea7a1a 33% 50%,#d93a2b 50% 67%,#8e44ad 67% 100%)}
+.aqi-bar i{position:absolute;top:-3px;width:4px;height:12px;border-radius:2px;background:var(--ink);transform:translateX(-50%)}
+.wx-aqi p{margin:0;font-size:11.5px;font-weight:700;line-height:1.3}
+.wx-fc{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:5px}
+.wx-day{background:rgba(255,255,255,.65);border-radius:10px;padding:4px 2px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0}
+.wx-day small{font-size:10.5px;font-weight:800}.wx-day span{font-size:19px;line-height:1.1}.wx-day b{font-size:12px}.wx-day b i{font-style:normal;opacity:.55;font-weight:700}.wx-day em{font-style:normal;font-size:10px;font-weight:700;opacity:.75}
+.wx-src{display:block;margin-top:6px;font-size:10px;opacity:.6;text-align:center}
+
+/* ---- kartu Ingat Parkir, Ingat AMAN ---- */
+.icard.t-aman{background:#fff;padding:0 0 10px;overflow:hidden}
+.icard.t-aman h3{background:#F47B20;color:#fff;margin:0;padding:8px 12px;font-size:15px}
+.aman-sub{background:#FDE3CC;color:#9a4a0c;font-size:10.5px;font-weight:900;letter-spacing:.4px;text-align:center;padding:3px 8px}
+.aman-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:9px 9px 0}
+.aman-col{border:1.5px solid #d9d3c7;border-radius:9px;overflow:hidden;background:#fff;min-width:0}
+.aman-hd{background:#2b2b2b;color:#fff;display:flex;align-items:center;gap:6px;padding:4px 7px}
+.aman-hd b{font-size:11.5px;line-height:1.1;font-weight:800}
+.aman-l{color:#F47B20;font-size:27px;font-weight:900;line-height:1}
+.aman-col ul{list-style:none;margin:0;padding:6px 7px 7px}
+.aman-col li{position:relative;padding-left:12px;margin:0 0 4px;font-size:11.5px;line-height:1.28;font-weight:600;color:#2b2b2b;overflow-wrap:anywhere}
+.aman-col li::before{content:"";position:absolute;left:0;top:.4em;width:6px;height:6px;border-radius:1.5px;background:#F47B20}
+
+/* ---- pengaturan suara ---- */
+.set-voice{border:1.5px solid #d9d3c7;border-radius:12px;padding:8px 12px 10px;margin:0 0 12px}
+.set-voice legend{font-weight:900;padding:0 6px}
+.set-voice select{width:100%;padding:7px;border:1.5px solid #b5ad9c;border-radius:9px;background:#fff;font:inherit;margin-top:3px}
+.set-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.set-h{margin:6px 0 4px;font-size:15px}

@@ -94,12 +94,23 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     const MALE = /(\bmale\b|\bman\b|pria|laki|andika|david|mark|george|daniel|james|guy|ryan|richard|alex|fred|rishi|google uk english male)/i;
     function load() { voices = supported ? synth.getVoices() : []; }
     if (supported) { load(); synth.onvoiceschanged = load; }
-    function pick(l) {
-      const pre = l === 'id' ? ['id-id', 'id_id', 'id'] : ['en-us', 'en-gb', 'en'];
-      const cand = voices.filter((v) => { const x = (v.lang || '').toLowerCase().replace('_', '-'); return pre.some((p) => x === p || x.startsWith(p + '-')); });
-      const f = cand.filter((v) => !MALE.test(v.name));
-      return f.find((v) => FEMALE.test(v.name)) || f[0] || cand[0] || null;
+    const prefKey = (l) => 'jasmin.voiceName.' + l;
+    const matchLang = (v, l) => { const x = (v.lang || '').toLowerCase().replace('_', '-'); return (l === 'id' ? ['id'] : ['en']).some((p) => x === p || x.startsWith(p + '-')); };
+    const NATURAL = /(natural|neural)/i, PREMIUM = /(online|premium|enhanced|siri)/i;
+    const GOODEN = /(aria|jenny|sonia|libby|ava\b|emma|michelle|ana\b|samantha|karen|moira|tessa|serena|zoe|allison|nicky|stephanie|catherine|google uk english female)/i;
+    function score(v) {
+      const n = v.name; let s = 0;
+      if (NATURAL.test(n)) s += 60; if (PREMIUM.test(n)) s += 35; if (GOODEN.test(n)) s += 25; if (FEMALE.test(n)) s += 10;
+      if (MALE.test(n)) s -= 80; if (/google us english/i.test(n)) s -= 15;      // suara bawaan Chrome ini terdengar paling robotik
+      return s;
     }
+    function listVoices(l) { return voices.filter((v) => matchLang(v, l)).sort((x, y) => score(y) - score(x)); }
+    function pick(l) {
+      const cand = listVoices(l);
+      const chosen = store.get(prefKey(l), '');
+      return (chosen && cand.find((v) => v.name === chosen)) || cand[0] || null;
+    }
+    const isNatural = (v) => !!v && (NATURAL.test(v.name) || PREMIUM.test(v.name));
     function firstSentence(t) {
       t = String(t || '').replace(/\s+/g, ' ').trim();
       const parts = t.match(/[^.!?]+[.!?]*/g) || [t];
@@ -108,17 +119,48 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
       s = s.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/[«»*_`#]/g, '').trim();
       return s.length > 160 ? s.slice(0, 160).replace(/\s+\S*$/, '') + '.' : s;
     }
-    function stop() { if (supported) synth.cancel(); }
+    let gSrc = null, gCtx = null;
+    function stop() { if (supported) synth.cancel(); if (gSrc) { try { gSrc.onended = null; gSrc.stop(); } catch { /* sudah berhenti */ } gSrc = null; Bgm.duck(false); } }
+    const ttsPrefs = () => store.get('jasmin.tts', { gemini: false, voice: 'Aoede', model: 'gemini-2.5-flash-preview-tts' });
+    // Suara AI Gemini (opsional; butuh API key Mode Cerdas). Gagal -> otomatis kembali ke suara browser.
+    async function geminiSpeak(text) {
+      const k = settings(), p = ttsPrefs();
+      const style = lang === 'en' ? 'Say in a warm, friendly, cheerful female voice: ' : 'Ucapkan dengan suara perempuan yang ramah, hangat, dan ceria: ';
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(p.model || 'gemini-2.5-flash-preview-tts')}:generateContent`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': k.key },
+        body: JSON.stringify({ contents: [{ parts: [{ text: style + text }] }], generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: p.voice || 'Aoede' } } } } }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const b64 = data.candidates[0].content.parts.find((x) => x.inlineData).inlineData.data;
+      const bin = atob(b64), len = bin.length >> 1, pcm = new Int16Array(len);
+      for (let i = 0; i < len; i++) { const lo = bin.charCodeAt(2 * i), hi = bin.charCodeAt(2 * i + 1); pcm[i] = (hi << 8) | lo; }
+      gCtx = gCtx || new (window.AudioContext || window.webkitAudioContext)();
+      await gCtx.resume();
+      const buf = gCtx.createBuffer(1, len, 24000); const ch = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) ch[i] = pcm[i] / 32768;
+      const src = gCtx.createBufferSource(); src.buffer = buf; src.connect(gCtx.destination);
+      gSrc = src; Bgm.duck(true); src.onended = () => { gSrc = null; Bgm.duck(false); }; src.start();
+    }
     function speak(say) {
-      if (!supported || lang === 'off' || !say) return;
+      if (lang === 'off' || !say) return;
       const text = firstSentence(typeof say === 'string' ? say : say[lang]);
       if (!text) return;
       stop();
+      const sv = settings();
+      if (ttsPrefs().gemini && sv.enabled && sv.key) {
+        geminiSpeak(text).catch((e) => { console.warn('Suara Gemini gagal, pakai suara browser', e); speakBrowser(text); });
+        return;
+      }
+      speakBrowser(text);
+    }
+    function speakBrowser(text) {
+      if (!supported) return;
       const u = new SpeechSynthesisUtterance(text);
       const v = pick(lang);
       u.lang = lang === 'id' ? 'id-ID' : 'en-US';
       if (v) { u.voice = v; u.lang = v.lang; }
-      u.pitch = 1.12; u.rate = 1.0; u.volume = 1;
+      u.pitch = isNatural(v) ? 1.0 : 1.06; u.rate = lang === 'en' ? 0.97 : 1.0; u.volume = 1;
       u.onstart = () => Bgm.duck(true);
       u.onend = u.onerror = () => Bgm.duck(false);
       synth.speak(u);
@@ -132,7 +174,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     $$('button', menu).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === lang)));
     menu.addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) set(b.dataset.v); });
     if (!supported) { menu.title = 'Browser ini tidak mendukung suara'; menu.style.opacity = '.5'; }
-    return { speak, stop, get lang() { return lang; }, firstSentence };
+    return { speak, stop, listVoices, prefKey, ttsPrefs, reload: load, get lang() { return lang; }, get lang2() { return lang; }, firstSentence };
   })();
 
 
@@ -950,15 +992,31 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
   $('#btnCatalog2').addEventListener('click', openCatalog);
 
   /* ---- pengaturan Mode Cerdas ---- */
+  function fillVoiceSelect(sel, l) {
+    const cur = store.get(Voice.prefKey(l), '');
+    sel.innerHTML = '<option value="">Otomatis (terbaik yang tersedia)</option>' + Voice.listVoices(l).map((v) => `<option value="${esc(v.name)}"${v.name === cur ? ' selected' : ''}>${esc(v.name)}</option>`).join('');
+  }
   $('#btnSettings').addEventListener('click', () => {
-    const s = settings(); const f = $('#settingsForm');
+    const s = settings(); const f = $('#settingsForm'); const t = Voice.ttsPrefs();
     f.enabled.checked = !!s.enabled; f.key.value = s.key || ''; f.model.value = s.model || CONFIG.GEMINI_MODEL;
+    Voice.reload(); fillVoiceSelect(f.voiceEn, 'en'); fillVoiceSelect(f.voiceId, 'id');
+    f.geminiTts.checked = !!t.gemini; f.geminiVoice.value = t.voice || 'Aoede'; f.ttsModel.value = t.model || 'gemini-2.5-flash-preview-tts';
     $('#app').classList.remove('info-open'); openModal('#modalSettings');
+  });
+  $('#voiceTest').addEventListener('click', () => {
+    const f = $('#settingsForm');
+    store.set(Voice.prefKey('en'), f.voiceEn.value); store.set(Voice.prefKey('id'), f.voiceId.value);
+    store.set('jasmin.tts', { gemini: f.geminiTts.checked, voice: f.geminiVoice.value, model: f.ttsModel.value.trim() || 'gemini-2.5-flash-preview-tts' });
+    const was = Voice.lang; const say = Voice.lang === 'id' ? 'Halo! Saya Teh JASMIN. Begini suara saya.' : 'Hello! I am Teh JASMIN. This is how I sound.';
+    Voice.speak(was === 'off' ? { id: say, en: 'Hello! I am Teh JASMIN. This is how I sound.' } : say);
+    if (was === 'off') toast('Suara sedang dimatikan (menu 🔇). Pilih ID atau EN dulu.');
   });
   $('#settingsForm').addEventListener('submit', (e) => {
     e.preventDefault(); const f = e.target;
     store.set('jasmin.llm', { enabled: f.enabled.checked && !!f.key.value.trim(), key: f.key.value.trim(), model: f.model.value.trim() || CONFIG.GEMINI_MODEL });
-    closeModals(); toast(f.enabled.checked && f.key.value.trim() ? 'Mode Cerdas aktif' : 'Mode Cerdas nonaktif');
+    store.set(Voice.prefKey('en'), f.voiceEn.value); store.set(Voice.prefKey('id'), f.voiceId.value);
+    store.set('jasmin.tts', { gemini: f.geminiTts.checked, voice: f.geminiVoice.value, model: f.ttsModel.value.trim() || 'gemini-2.5-flash-preview-tts' });
+    closeModals(); toast('Pengaturan disimpan' + (f.geminiTts.checked && !f.key.value.trim() ? ' (suara Gemini butuh API key)' : ''));
   });
   $('#settingsClear').addEventListener('click', () => { store.del('jasmin.llm'); $('#settingsForm').reset(); toast('Kunci dihapus dari perangkat ini'); });
 
@@ -983,6 +1041,10 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
     const dayIdx = Math.floor(Date.now() / 86400000);
     const cards = (data.kartu || []).map((c) => {
       const text = Array.isArray(c.rotasi) && c.rotasi.length ? c.rotasi[dayIdx % c.rotasi.length] : c.teks;
+      if (Array.isArray(c.aman) && c.aman.length) {
+        const cols = c.aman.map((k) => `<div class="aman-col"><div class="aman-hd"><span class="aman-l">${esc(k.huruf)}</span><b>${esc(k.judul).replace('|', '<br>')}</b></div><ul>${(k.poin || []).map((x) => `<li>${rich(x).replace(/\*(.+?)\*/g, '<em>$1</em>')}</li>`).join('')}</ul></div>`).join('');
+        return `<article class="icard t-aman"><h3><span aria-hidden="true">${esc(c.ikon || '')}</span>${esc(c.judul)}${c.tag ? `<span class="tag">${esc(c.tag)}</span>` : ''}</h3>${c.subjudul ? `<div class="aman-sub">${esc(c.subjudul)}</div>` : ''}<div class="aman-grid">${cols}</div></article>`;
+      }
       const tema = { krem: 't-krem', biru: 't-biru', peach: 't-peach' }[c.tema] || 't-krem';
       return `<article class="icard ${tema}"><h3><span aria-hidden="true">${esc(c.ikon || '')}</span>${esc(c.judul)}${c.tag ? `<span class="tag">${esc(c.tag)}</span>` : ''}</h3><p>${esc(text)}</p></article>`;
     }).join('');

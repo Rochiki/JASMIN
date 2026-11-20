@@ -94,6 +94,25 @@
         <span class="online"><i></i>Online</span>
       </div>
 
+      <section class="wx" id="wx" aria-label="Cuaca, jam, dan kualitas udara">
+        <div class="wx-top">
+          <button class="wx-place" id="wxPlace" type="button" title="Ganti lokasi" aria-expanded="false">📍 <span id="wxPlaceName">Jakarta</span> <i aria-hidden="true">✎</i></button>
+          <div class="wx-clock"><b id="wxTime">--:--:--</b><small id="wxDate"></small></div>
+        </div>
+        <form class="wx-search" id="wxForm" hidden autocomplete="off">
+          <div class="wx-row"><input id="wxQuery" type="search" placeholder="Cari kota / lokasi…" aria-label="Cari lokasi"><button type="button" id="wxGeo" title="Pakai lokasi saya" aria-label="Pakai lokasi saya">🎯</button></div>
+          <ul class="wx-sug" id="wxSuggest" role="listbox"></ul>
+        </form>
+        <div class="wx-now">
+          <span class="wx-ic" id="wxIcon" aria-hidden="true">⛅</span>
+          <div class="wx-tt"><b id="wxTemp">--°</b><small id="wxDesc">Memuat cuaca…</small></div>
+          <div class="wx-meta" id="wxMeta"></div>
+        </div>
+        <div class="wx-aqi" id="wxAqi" hidden></div>
+        <div class="wx-fc" id="wxFc"></div>
+        <small class="wx-src">Data: Open-Meteo · <span id="wxUpd">memuat…</span></small>
+      </section>
+
       <section class="info" aria-labelledby="infoTitle">
         <h2 id="infoTitle">QSHE Info &amp; Update <span aria-hidden="true">📅🔔</span></h2>
         <div id="infoCards" class="info-cards"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
@@ -101,7 +120,7 @@
 
       <div class="side-actions">
         <button class="btn-side" id="btnCatalog" type="button"><svg><use href="#s-doc"/></svg>Katalog Pekerjaan JSEA</button>
-        <button class="btn-icon" id="btnSettings" type="button" title="Pengaturan Mode Cerdas (opsional)" aria-label="Pengaturan"><svg><use href="#s-gear"/></svg></button>
+        <button class="btn-icon" id="btnSettings" type="button" title="Pengaturan suara &amp; Mode Cerdas" aria-label="Pengaturan"><svg><use href="#s-gear"/></svg></button>
       </div>
     </aside>
 
@@ -198,8 +217,18 @@
 <!-- ============ MODAL: PENGATURAN ============ -->
 <div class="modal" id="modalSettings" hidden>
   <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <header><h3 id="setTitle">Mode Cerdas (opsional)</h3><button class="x" data-close aria-label="Tutup">×</button></header>
+    <header><h3 id="setTitle">Pengaturan</h3><button class="x" data-close aria-label="Tutup">×</button></header>
     <form class="modal-body" id="settingsForm">
+      <fieldset class="set-voice"><legend>🔊 Suara Teh JASMIN</legend>
+        <label>Suara English<select name="voiceEn"></select></label>
+        <label>Suara Indonesia<select name="voiceId"></select></label>
+        <label class="check"><input type="checkbox" name="geminiTts"> Pakai suara AI Gemini (lebih natural; butuh API key di bawah)</label>
+        <div class="set-two"><label>Pilihan suara Gemini<select name="geminiVoice"><option>Aoede</option><option>Leda</option><option>Zephyr</option><option>Kore</option><option>Sulafat</option><option>Vindemiatrix</option><option>Achernar</option></select></label>
+        <label>Model suara<input name="ttsModel" type="text" placeholder="gemini-2.5-flash-preview-tts"></label></div>
+        <button type="button" class="btn-ghost" id="voiceTest">▶ Coba suara</button>
+        <p class="muted" style="margin:6px 0 0">Daftar suara bergantung perangkat. Di Microsoft Edge tersedia suara “Natural” yang paling enak didengar.</p>
+      </fieldset>
+      <h4 class="set-h">Mode Cerdas (opsional)</h4>
       <p class="muted">Secara bawaan Teh JASMIN bekerja <b>tanpa server</b> dan hanya memakai database JSEA di browser. Anda dapat mengaktifkan model bahasa Gemini untuk menjawab pertanyaan bebas. <b>Tabel JSEA tetap diambil dari database</b>, bukan dikarang model.</p>
       <label class="check"><input type="checkbox" name="enabled"> Aktifkan Mode Cerdas</label>
       <label>Gemini API key<input name="key" type="password" autocomplete="off" placeholder="AIza…"></label>
@@ -215,5 +244,6 @@
 <script src="jsea-database.js"></script>
 <script src="app.js"></script>
 <script src="export.js"></script>
+<script src="widget.js"></script>
 </body>
 </html>

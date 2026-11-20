@@ -65,3 +65,17 @@ Tombol ⚙ di sidebar. Isi API key Gemini sendiri; tersimpan hanya di browser pe
 - GitHub Pages **bersifat publik**, termasuk bila repo private (kecuali paket Enterprise). Folder `sources/` ikut publik; boleh dihapus setelah database dibuat, karena `jsea-database.js` sudah memuat seluruh isinya.
 - Kolom **PIC** diturunkan dari jenis langkah (database tidak punya kolom PIC). Tinjau sebelum dipakai resmi.
 - Hal yang tidak ada di database ditandai `[PERLU VERIFIKASI]`; tidak ada angka yang dikarang.
+
+## Widget cuaca, jam & kualitas udara
+Di bagian paling atas sidebar (`widget.js`). Data dari **Open-Meteo** (gratis, tanpa API key; *bukan* Google, karena Google Weather/Air Quality API butuh API key + billing).
+- Klik nama lokasi untuk mencari kota, atau tombol 🎯 untuk lokasi saat ini (butuh izin browser). Pilihan disimpan di browser.
+- Jam berjalan mengikuti zona waktu lokasi (WIB/WITA/WIT). Muncul suhu, terasa seperti, kelembapan, angin, prakiraan 4 hari, dan kualitas udara (US AQI + PM2.5 + saran singkat). Diperbarui tiap 15 menit.
+- Lokasi bawaan: Jakarta (ubah `DEFAULT_LOC` di `widget.js`).
+
+## Kartu "Ingat Parkir, Ingat AMAN"
+Ada di `qshe-updates.json` (kartu dengan daftar `aman`: huruf, judul, poin). Pakai `|` pada judul untuk pindah baris, `**tebal**`, `*miring*`. Ubah isi cukup dengan mengedit JSON.
+
+## Suara (diperbarui)
+- Pemilihan suara otomatis memprioritaskan suara "Natural"/"Online" (mis. Microsoft Aria/Jenny di Edge) dan menghindari suara Google US English yang robotik.
+- Ikon ⚙ → *Suara Teh JASMIN*: pilih suara English/Indonesia sendiri dan klik "Coba suara".
+- Opsional: **suara AI Gemini** (Aoede, Leda, Zephyr, dst.) memakai API key Mode Cerdas. Jika gagal, otomatis kembali ke suara browser.

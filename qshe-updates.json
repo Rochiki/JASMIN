@@ -1,6 +1,54 @@
 {
-  "_petunjuk": "Edit file ini langsung di GitHub (ikon pensil) lalu Commit. Kartu di sidebar 'QSHE Info & Update' otomatis berubah. Jangan hapus tanda kutip, koma, dan kurung. Ubah hanya teks di dalam tanda kutip. Untuk Safety Moment, isi 'rotasi' berisi beberapa kalimat agar berganti tiap hari; kosongkan ([]) bila ingin satu kalimat tetap pada 'teks'.",
+  "_petunjuk": "Edit file ini langsung di GitHub (ikon pensil) lalu Commit. Kartu di sidebar 'QSHE Info & Update' otomatis berubah. Jangan hapus tanda kutip, koma, dan kurung. Ubah hanya teks di dalam tanda kutip. Untuk Safety Moment, isi 'rotasi' berisi beberapa kalimat agar berganti tiap hari; kosongkan ([]) bila ingin satu kalimat tetap pada 'teks'. Kartu 'Ingat Parkir, Ingat AMAN' memakai daftar 'aman' (huruf, judul, poin); tanda | pada judul = pindah baris, **teks** = tebal.",
   "kartu": [
+    {
+      "id": "ingat-aman",
+      "judul": "Ingat Parkir, Ingat AMAN",
+      "ikon": "🅿️",
+      "tag": "",
+      "subjudul": "ATURAN A.M.A.N – ULANGI SETIAP KALI PARKIR",
+      "tema": "oranye",
+      "teks": "",
+      "rotasi": [],
+      "aman": [
+        {
+          "huruf": "A",
+          "judul": "Ada|Spotter",
+          "poin": [
+            "Spotter standby dan aktif",
+            "Berdiri di sisi belakang yang terlihat",
+            "**Tidak ada kontak mata, tidak ada gerak**"
+          ]
+        },
+        {
+          "huruf": "M",
+          "judul": "Memastikan|Lokasi",
+          "poin": [
+            "Bebas rintangan, permukaan rata",
+            "Pisahkan pekerja kaki dan alat berat",
+            "Hindari area gelap dan *blindspot*"
+          ]
+        },
+        {
+          "huruf": "A",
+          "judul": "Arah &|Jarak",
+          "poin": [
+            "Komunikasi jelas dengan driver",
+            "Jaga jarak dari bangunan dan kendaraan",
+            "Mundur pelan, mata tetap ke spotter"
+          ]
+        },
+        {
+          "huruf": "N",
+          "judul": "Nyaman &|Aman",
+          "poin": [
+            "Posisi lurus di dalam slot",
+            "Rem parkir aktif, mesin mati",
+            "Area *clear*, spotter beri tanda OK"
+          ]
+        }
+      ]
+    },
     {
       "id": "safety-moment",
       "judul": "Safety Moment",
