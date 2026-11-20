@@ -79,3 +79,11 @@ Ada di `qshe-updates.json` (kartu dengan daftar `aman`: huruf, judul, poin). Pak
 - Pemilihan suara otomatis memprioritaskan suara "Natural"/"Online" (mis. Microsoft Aria/Jenny di Edge) dan menghindari suara Google US English yang robotik.
 - Ikon ⚙ → *Suara Teh JASMIN*: pilih suara English/Indonesia sendiri dan klik "Coba suara".
 - Opsional: **suara AI Gemini** (Aoede, Leda, Zephyr, dst.) memakai API key Mode Cerdas. Jika gagal, otomatis kembali ke suara browser.
+
+## Modul Tanggap Darurat (DRT)
+
+21 pekerjaan format JSEA 6 kolom untuk keadaan darurat: penilaian dan pelaporan, kebakaran (bangunan, unit, lahan), ledakan, tumpahan B3, cedera berat dan RJP, terjepit, kecelakaan lalu lintas, hilang kontak, sengatan listrik, rescue ketinggian/ruang terbatas, darurat medis, gempa/tsunami, banjir/petir, gangguan keamanan, keracunan makanan, evakuasi, inspeksi alat darurat, pasca darurat, dan kartu kontak.
+
+- Sumber: `sources/DATABASE_JSEA_TANGGAP_DARURAT.md`; jalankan `node tools/build-database.mjs` setelah mengubahnya.
+- PIC modul ini menurut peran tim darurat (COE, Warden, Regu Pemadam, First Aider, dst.) dan ditandai turunan.
+- Isi bersifat generik: nama kode warna, nomor telepon, titik kumpul, dan personel disesuaikan per lokasi (lihat DRT-21). Rujukan bertanda "perlu verifikasi" harus dicek sebelum dipakai resmi.

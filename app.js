@@ -519,6 +519,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     ['TRK', /\b(tractor head|trailer|fifth wheel|sadel|truck jalan raya|service truck|rem udara|common rail|tilting kabin|dpf|scr)\b/],
     ['MWS', /\b(mobile workshop|bengkel keliling|mws|genset|kompresor)\b/],
     ['RSA', /\b(roadside|rsa|mogok|breakdown|jalan hauling|jalan umum|panggilan darurat)\b/],
+    ['DRT', /\b(darurat|emergency|kebakaran|api|apar|gempa|tsunami|banjir|petir|evakuasi|rjp|p3k|henti jantung|tumpahan|ledakan|sengatan|keracunan|bom|kerusuhan|kabut asap|karhutla|ular|man down|hilang kontak)\b/],
     ['GEN', /\b(umum|generik|dasar|isolasi energi|zero energy|loto|lifting|rigging|perjalanan dinas|parkir)\b/],
   ];
 
@@ -767,7 +768,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
   const jobItem = (j, label = 'Buat JSEA ›') => `<button class="opt-item" type="button" data-act="jsea" data-code="${esc(j.code)}"><span class="code">${esc(j.code)}</span><span class="tt">${esc(j.title)}</span><span class="go">${label}</span></button>`;
 
   const MOD_ASK = [
-    ['EXC', 'Excavator Hidrolis'], ['ADT', 'Articulated Dump Truck / Hauler'], ['TRK', 'Service Truck / Tractor Head'], ['MWS', 'Mobile Workshop'], ['RSA', 'Roadside / Unit Mogok'], ['GEN', 'Umum (isolasi energi, lifting, perjalanan, parkir)'],
+    ['EXC', 'Excavator Hidrolis'], ['ADT', 'Articulated Dump Truck / Hauler'], ['TRK', 'Service Truck / Tractor Head'], ['MWS', 'Mobile Workshop'], ['RSA', 'Roadside / Unit Mogok'], ['DRT', 'Tanggap Darurat (kebakaran, tumpahan, cedera, gempa, evakuasi)'], ['GEN', 'Umum (isolasi energi, lifting, perjalanan, parkir)'],
   ];
   const modules = () => (DB ? DB.modules : []);
 
