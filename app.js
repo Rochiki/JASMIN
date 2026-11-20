@@ -784,6 +784,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     return `<p>Siap, ini yang bisa Teh JASMIN bantu:</p><ul>
       <li><b>Buat JSEA</b> per jenis pekerjaan (bukan per merek/model), lengkap tabel 6 kolom sesuai Form JSEA.</li>
       <li><b>Unduh</b> hasilnya sebagai <b>PDF</b> siap cetak, <b>Excel</b>, atau salin langsung ke Excel.</li>
+      <li><b>Buat JRM</b> (Journey Risk Management) otomatis dari link Google Maps, unduh PDF/Word.</li>
       <li><b>Tutorial Tanggap Darurat</b> langkah demi langkah (kebakaran, tumpahan, RJP, gempa, banjir, evakuasi, dll.). Ketik <i>“kebakaran”</i> atau <i>“tutorial darurat”</i>.</li>
       <li>Jawab pertanyaan keselamatan dari database: aturan <i>zero energy state</i>, kesalahan umum, APD, tanggap darurat.</li></ul>
       <p>Kalau informasi tidak ada di database, saya tandai <span class="pv">${PV}</span> dan tidak mengarang angka.</p>
@@ -930,6 +931,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     const qn = normalize(q).split(' ').map((w) => SLANG[w] || w).join(' ');
     if (!DB) return { html: 'Database JSEA belum termuat. Muat ulang halaman ya.' };
 
+    if (/\b(jrm|journey risk|izin perjalanan|rencana perjalanan)\b/.test(qn)) return { pose: 'present', say: { id: 'Siap! Formulir JRM terisi otomatis dari link Google Maps. Silakan dibuka.', en: 'Sure! The JRM form fills itself from a Google Maps link. Please open it.' }, html: '<p>Siap! <b>JRM (Journey Risk Management)</b> versi baru terisi otomatis: tempel link Google Maps atau ketik nama tempat, lalu jarak, waktu tempuh, jadwal istirahat, cuaca, dan usulan risiko dihitung sendiri. Bisa diunduh sebagai PDF atau Word, tanpa kotak approval karena persetujuan atasan dilakukan online.</p><div class="opts">' + optBtn('🧭 Buka Formulir JRM', 'data-act="jrm"') + '</div>' };
     if (/\b(tutorial|panduan|daftar|semua|menu)\b.*\b(darurat|emergency)\b|^(darurat|emergency|tanggap darurat)$/.test(qn) && TUT().length) return tutorListReply();
     if (tutWanted(qn)) return tutorRoute(qn, q);
     if (RE.emergency.test(qn) && RE.emergencyNow.test(qn)) return emergencyReply(search(q).ranked[0] && search(q).ranked[0].job);
@@ -1017,6 +1019,7 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
     if (act === 'jsea') showJSEA(b.dataset.code);
     else if (act === 'tutor') { const t = TUT().find((x) => x.id === b.dataset.id); if (t) { userSays('Tutorial ' + t.title); botReply(async () => tutorReply(t), 'alert', 500); } }
     else if (act === 'tutlist') openTutor();
+    else if (act === 'jrm') window.JASMIN_JRM && window.JASMIN_JRM.open();
     else if (act === 'ask') ask(b.dataset.q);
     else if (act === 'translate') toggleTranslate(b);
     else if (act === 'catalog') openCatalog();
@@ -1032,7 +1035,7 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
   /* ---- chips cepat ---- */
   const CHIPS = [
     ['Buat JSEA Baru', 'Buat JSEA Baru'], ['Daftar Pekerjaan Excavator', 'Daftar Pekerjaan Excavator'], ['Daftar Pekerjaan ADT', 'Daftar Pekerjaan ADT'],
-    ['Truck & Mobile Workshop', 'Daftar Pekerjaan Truck dan Mobile Workshop'], ['Aturan Zero Energy State', 'Aturan Zero Energy State'],
+    ['Truck & Mobile Workshop', 'Daftar Pekerjaan Truck dan Mobile Workshop'], ['Aturan Zero Energy State', 'Aturan Zero Energy State'], ['🧭 Buat JRM', 'Buat JRM'],
   ];
   $('#chips').innerHTML = CHIPS.map(([l, q]) => `<button class="chip" type="button" data-q="${esc(q)}">${esc(l)}</button>`).join('') + `<a class="chip wa" href="${WA_URL}" target="_blank" rel="noopener noreferrer">Hubungi Tim Safety</a>`;
   $('#chips').addEventListener('click', (e) => { const c = e.target.closest('.chip[data-q]'); if (c) ask(c.dataset.q); });

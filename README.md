@@ -86,3 +86,14 @@ Ada di `qshe-updates.json` (kartu dengan daftar `aman`: huruf, judul, poin). Pak
 
 - Sumber: `sources/tutorial/TUTORIAL_TANGGAP_DARURAT.md`; jalankan `node tools/build-tutorial.mjs` untuk membuat `tutorial-darurat.js`.
 - Isi bersifat umum: kode warna, nomor telepon, titik kumpul, dan personel disesuaikan per lokasi (Tutorial 21). Rujukan bertanda "perlu verifikasi" dicek dulu sebelum dipakai resmi.
+
+## Buat JRM (Journey Risk Management)
+
+Menu **🧭 Buat JRM** (sidebar, atau ketik "buat jrm" di chat) menggantikan form JRM manual.
+
+- Titik berangkat/tujuan: tempel link Google Maps (versi panjang), koordinat, nama tempat, atau tombol "Lokasi saya".
+- Otomatis: rute dan jarak (OSRM), waktu tempuh yang disesuaikan jenis jalan/kendaraan/muatan, jadwal istirahat (30 menit tiap 2 jam mengemudi), cuaca dan AQI per titik (Open-Meteo), permukaan jalan dari data ketinggian, peringatan gelap/menginap, usulan tingkat risiko (skor transparan, bisa diubah).
+- Tanpa kotak approval (persetujuan atasan dilakukan online). Unduh PDF atau Word; tanpa nama perusahaan dan logo.
+- Data diri hanya disimpan di perangkat bila dicentang (`localStorage jasmin.jrm.profile`), dapat dihapus.
+- File: `jrm-core.js` (logika + pembuat PDF/DOCX), `jrm.js` (UI). Pustaka jsPDF dan docx dimuat dari CDN saat dibutuhkan.
+- Batas: link pendek maps.app.goo.gl tidak bisa dibaca browser; waktu tempuh adalah estimasi; batas mengemudi harian 8 jam perlu verifikasi.

@@ -438,3 +438,42 @@ legend{font-weight:900;font-size:13.5px;padding:0 6px}
 .mascot .f.show{animation:breathe 4.2s ease-in-out infinite,popin .35s ease-out}
 @keyframes popin{0%{transform:scale(.94) translateY(6px)}60%{transform:scale(1.03) translateY(-3px)}100%{transform:scale(1) translateY(0)}}
 @media (prefers-reduced-motion:reduce){.mascot .f.show{animation:none}}
+
+/* ---------- JRM ---------- */
+.btn-jrm{background:#1E2939;color:#fff}
+.jrm-box{max-width:980px;width:96vw}
+.jrm-body{max-height:78vh;overflow:auto;padding-bottom:14px}
+.jrm-intro{font-size:13px;margin:0 0 10px}
+.jcard{border:2px solid var(--ink);border-radius:12px;padding:10px 12px;margin:0 0 12px;background:#fff}
+.jcard h4{margin:0 0 8px;font:700 15px/1.2 var(--font-d);color:#F26A0E;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.jcard h5{margin:12px 0 4px;font-size:13.5px}
+.jgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+.jwide{grid-column:1/-1}
+.jf{display:flex;flex-direction:column;gap:3px;font-size:12.5px;margin-bottom:6px;min-width:0}
+.jf>span{font-weight:700;color:#1E2939}
+.jf input[type=text],.jf input[type=date],.jf input[type=time],.jf input[type=number],.jf input:not([type]),.jf textarea,.jakt input{border:2px solid var(--ink);border-radius:9px;padding:7px 9px;font:inherit;background:#fff;color:var(--ink);min-width:0;width:100%}
+.jchips{display:flex;flex-wrap:wrap;gap:6px}
+.jchip input{position:absolute;opacity:0;pointer-events:none}
+.jchip span{display:inline-block;border:2px solid var(--ink);border-radius:999px;padding:4px 11px;font-weight:700;font-size:12.5px;background:#fff;cursor:pointer}
+.jchip input:checked+span{background:#F26A0E;color:#fff}
+.jchip input:focus-visible+span{outline:3px solid #1565C0}
+.jloc{display:flex;gap:6px;flex-wrap:wrap}.jloc input{flex:1 1 220px}
+.jbtn{border:2px solid var(--ink);background:#FFE9D1;border-radius:9px;padding:5px 10px;font-weight:800;font-size:12px;cursor:pointer}
+.jbtn.x{background:#FDE3E1;padding:3px 9px}
+.jsug{display:grid;gap:4px}.jsug-i{text-align:left;border:1.5px solid #999;border-radius:8px;background:#fff;padding:6px 8px;font-size:12px;cursor:pointer}.jsug-i:hover{background:#FFE9D1}
+.jres{font-size:12px;min-height:16px}.jres .ok{color:#2E7D32;font-weight:900}.bad{color:#C62828;font-weight:800}
+.jsmall{font-size:11.5px;opacity:.85;margin:4px 0 0}.jwarn{color:#C62828;font-weight:700;opacity:1}
+.jchk{display:flex;gap:6px;align-items:flex-start;font-size:12px;margin-top:6px}
+.jauto{font-weight:400;font-style:normal;color:#2E7D32}
+.jakt{display:grid;grid-template-columns:22px 1fr 90px 32px;gap:6px;margin-bottom:6px;align-items:center}.jakt .no{font-weight:900}
+.jstatus{font-size:12.5px;margin-bottom:8px}.jstatus.ok{color:#2E7D32}.jstatus.warn{color:#B26A00}.jstatus.bad{color:#C62828}
+.jstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:8px}.jstats div{border:2px solid var(--ink);border-radius:10px;padding:6px 8px;background:#FFF4E8}.jstats b{display:block;font-size:15px}.jstats span{font-size:11px}
+.jalert{background:#FFF4CC;border:2px solid #C79100;border-radius:9px;padding:6px 9px;font-size:12.5px;margin:5px 0}
+.jmap{width:100%;height:auto;background:#F8FAFC;border:2px solid var(--ink);border-radius:10px;margin-top:6px}
+.jmap .jline{fill:none;stroke:#F26A0E;stroke-width:3.5;stroke-linejoin:round;stroke-linecap:round}.jmap .jstart{fill:#228B22}.jmap .jend{fill:#C81E1E}.jmap .jbrk{fill:#1565C0}.jmap .jovn{fill:#6A1B9A}.jmap text{font:700 13px sans-serif;fill:#1E2939}
+.jtw{overflow:auto}.jt{width:100%;border-collapse:collapse;font-size:12px}.jt th,.jt td{border:1.5px solid #999;padding:4px 6px;text-align:left;vertical-align:top}.jt th{background:#E6E6E6}
+.jdet{font-size:12px;margin:8px 0}.jdet summary{cursor:pointer;font-weight:700}
+.jrisk{padding:2px 9px;border-radius:999px;color:#fff;font-size:12px}.jrisk.rendah{background:#2E7D32}.jrisk.tinggi{background:#C62828}
+.jfac{margin:4px 0 8px;padding-left:18px;font-size:12.5px}
+.jact{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+@media(max-width:640px){.jgrid{grid-template-columns:1fr}.jstats{grid-template-columns:repeat(2,1fr)}}
