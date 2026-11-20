@@ -22,14 +22,14 @@
   const loadLib = (k) => pend[k] || (pend[k] = new Promise((res, rej) => { const s = document.createElement('script'); s.src = LIBS[k]; s.onload = res; s.onerror = () => { delete pend[k]; rej(new Error('Pustaka ' + k + ' gagal dimuat. Periksa koneksi internet.')); }; document.head.appendChild(s); }));
 
   const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-  const nextHour = () => { const d = new Date(Date.now() + 3600e3); return `${String(d.getHours()).padStart(2, '0')}:00`; };
+  const nowHM = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const fetchJSON = async (url, ms = 15000) => { const c = new AbortController(); const t = setTimeout(() => c.abort(), ms); try { const r = await fetch(url, { signal: c.signal }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); } finally { clearTimeout(t); } };
 
   /* ---------- state ---------- */
   const S = {
-    dateISO: todayISO(), departTime: nextHour(), kim: 'ya', partner: 'sendiri', jalur: ['darat'], kendaraan: ['lv4wd'], jenisJalan: ['aspal'], kondisi: 'baik', lebar: '2', permukaan: 'datar', barang: ['sparepart'],
-    roundTrip: true, aktivitas: [{ nama: '', menit: '' }], permukaanManual: false, pesanEdited: false, riskManual: null,
+    dateISO: todayISO(), departTime: nowHM(), partner: 'sendiri', jalur: ['darat'], kendaraan: ['lv4wd'], jenisJalan: ['aspal'], kondisi: 'baik', lebar: '2', permukaan: 'datar', barang: ['sparepart'],
+    roundTrip: true, aktivitas: [{ nama: '', menit: '' }], istirahat: [{ nama: 'Makan siang dan ibadah', menit: 60 }], intervalJam: 2, restMenit: 30, permukaanManual: false, pesanEdited: false, riskManual: null,
   };
   let A = {}, origin = null, dest = null, busyCalc = 0, calcTimer = null, built = false;
   const cache = { route: new Map(), elev: new Map(), wx: new Map(), rev: new Map() };
@@ -88,7 +88,7 @@
   }
 
   /* ---------- profil tersimpan di perangkat ---------- */
-  const PROFILE_KEYS = ['nama', 'nik', 'lahir', 'sim', 'simExp', 'kim', 'kontakDarurat'];
+  const PROFILE_KEYS = ['nama'];
   function loadProfile() { try { const p = JSON.parse(localStorage.getItem(LS) || 'null'); if (p) PROFILE_KEYS.forEach((k) => { if (p[k]) S[k] = p[k]; }); S.remember = !!p; } catch (e) { S.remember = false; } if (S.remember === undefined) S.remember = false; }
   function saveProfile() { try { if (S.remember) { const p = {}; PROFILE_KEYS.forEach((k) => { if (S[k]) p[k] = S[k]; }); localStorage.setItem(LS, JSON.stringify(p)); } } catch (e) { /* abaikan */ } }
   function clearProfile() { try { localStorage.removeItem(LS); } catch (e) { /* abaikan */ } }
@@ -100,23 +100,17 @@
     return `
     <p class="jrm-intro">Isi seperlunya. Sisanya dihitung otomatis: jarak, waktu tempuh, jadwal istirahat, cuaca, kualitas udara, dan usulan tingkat risiko. Persetujuan atasan dilakukan secara online, jadi tidak ada kotak tanda tangan.</p>
     <section class="jcard"><h4>1. Informasi umum</h4><div class="jgrid">
-      ${fld('joSt', 'No. JO / ST', '', 'text', 'mis. JO-001234')}${fld('nama', 'Nama', 'autocomplete="name"')}
-      ${fld('nik', 'NIK', 'inputmode="numeric" maxlength="20"')}${fld('lahir', 'Tanggal lahir (usia dihitung otomatis)', '', 'date')}
-      ${fld('sim', 'No. SIM', '')}${fld('simExp', 'Masa berlaku SIM', '', 'date')}
-      <div class="jf"><span>Memiliki izin mengemudi internal (KIM)</span><div class="jchips" data-name="kim" data-multi="0"><label class="jchip"><input type="radio" name="j-kim" value="ya"><span>Ya</span></label><label class="jchip"><input type="radio" name="j-kim" value="tidak"><span>Tidak</span></label></div></div>
+      ${fld('nama', 'Nama', 'autocomplete="name"')}
       <div class="jf"><span>Partner</span>${chips('partner', 'partner', false)}</div>
-      ${fld('rekan', 'Nama rekan (bila berdua/lebih)', '')}${fld('kontakDarurat', 'Kontak darurat (nama, no. HP)', '')}
-    </div><p class="jsmall" id="j-usia"></p>
-    <label class="jchk"><input type="checkbox" id="j-remember"> Ingat data saya di perangkat ini (nama, NIK, SIM, kontak). Tersimpan hanya di browser ini, tidak dikirim ke server mana pun. <a href="#" id="j-forget">Hapus data tersimpan</a></label></section>
+    </div>
+    <label class="jchk"><input type="checkbox" id="j-remember"> Ingat nama saya di perangkat ini (tersimpan hanya di browser ini, tidak dikirim ke server mana pun). <a href="#" id="j-forget">Hapus data tersimpan</a></label><p class="jsmall" id="j-usia"></p></section>
 
     <section class="jcard"><h4>2. Rute (cukup tempel link Google Maps)</h4><div class="jgrid">
-      ${fld('tanggal', 'Tanggal perjalanan', '', 'date')}${fld('berangkat', 'Waktu berangkat', '', 'time')}
+      ${fld('tanggal', 'Tanggal perjalanan', '', 'date')}<div class="jf"><span>Waktu berangkat</span><div class="jloc"><input id="j-berangkat" type="time"><button type="button" class="jbtn" id="j-now">Sekarang</button></div></div>
       <div class="jf jwide"><span>Titik berangkat</span><div class="jloc"><input id="j-asal" type="text" placeholder="Tempel link Google Maps, koordinat, atau ketik nama tempat"><button type="button" class="jbtn" id="j-gps" title="Pakai lokasi saya">📍 Lokasi saya</button><button type="button" class="jbtn" id="j-cari-asal">Cari</button></div><div class="jsug" id="j-sug-asal"></div><div class="jres" id="j-res-asal"></div></div>
       <div class="jf jwide"><span>Titik tujuan</span><div class="jloc"><input id="j-tujuan" type="text" placeholder="Tempel link Google Maps, koordinat, atau ketik nama tempat"><button type="button" class="jbtn" id="j-cari-tujuan">Cari</button></div><div class="jsug" id="j-sug-tujuan"></div><div class="jres" id="j-res-tujuan"></div></div>
-      ${fld('pelanggan', 'Nama pelanggan', '')}${fld('alamatPelanggan', 'Alamat pelanggan (kosong = diisi dari titik tujuan)', '')}
       <label class="jchk jwide"><input type="checkbox" id="j-roundTrip"> Pulang-pergi (kembali ke titik berangkat)</label>
-      ${fld('kmAwal', 'Km awal kendaraan (odometer)', 'inputmode="numeric"')}
-    </div><p class="jsmall">Tips: di Google Maps tekan Bagikan lalu salin link. Link pendek (maps.app.goo.gl) tidak bisa dibaca browser; buka dulu link-nya lalu salin alamat dari bilah alamat, atau cukup ketik nama tempatnya.</p></section>
+    </div><p class="jsmall">Jarak (km), waktu tempuh, dan waktu tiba dihitung otomatis dari titik berangkat dan tujuan; tidak perlu diisi manual. Tips: di Google Maps tekan Bagikan lalu salin link. Link pendek (maps.app.goo.gl) tidak bisa dibaca browser; buka dulu link-nya lalu salin alamat dari bilah alamat, atau cukup ketik nama tempatnya.</p></section>
 
     <section class="jcard"><h4>3. Transportasi</h4>
       <div class="jf"><span>Jalur yang dilalui (boleh lebih dari satu)</span>${chips('jalur', 'jalur', true)}</div>
@@ -129,7 +123,11 @@
       ${fld('barangRinci', 'Rincian barang (mis. toolbox, oil pail 5 pcs)', '')}
     </section>
 
-    <section class="jcard"><h4>4. Aktivitas dan estimasi waktu pengerjaan</h4><div id="j-akt"></div><button type="button" class="jbtn" id="j-addAkt">+ Tambah aktivitas</button></section>
+    <section class="jcard"><h4>4. Estimasi pekerjaan dan rencana istirahat</h4>
+      <div class="jf"><span>Aktivitas dan lama penyelesaian (jam)</span><div id="j-akt"></div><button type="button" class="jbtn" id="j-addAkt">+ Tambah aktivitas</button></div>
+      <div class="jf"><span>Rencana istirahat di lokasi kerja (makan, ibadah, dll.; menit)</span><div id="j-ist"></div><button type="button" class="jbtn" id="j-addIst">+ Tambah istirahat</button></div>
+      <div class="jf"><span>Istirahat selama perjalanan: setiap berapa jam mengemudi, dan berapa menit</span><div class="jgrid"><label class="jf"><span>Setiap (jam)</span><input id="j-intervalJam" type="number" min="1" max="4" step="0.5"></label><label class="jf"><span>Lama (menit)</span><input id="j-restMenit" type="number" min="10" max="120" step="5"></label></div><p class="jsmall">Standar IK: istirahat 30 menit setiap 2 jam mengemudi. Titik istirahat ditentukan otomatis pada rute.</p></div>
+      <div class="jstatus" id="j-total"></div></section>
 
     <section class="jcard" id="j-auto"><h4>5. Hasil hitung otomatis <button type="button" class="jbtn" id="j-calc">⚡ Hitung ulang</button></h4><div id="j-status" class="jstatus">Isi titik berangkat dan tujuan; hasil muncul otomatis.</div><div id="j-out"></div></section>
 
@@ -144,32 +142,32 @@
   const val = (id) => { const e = $('#j-' + id); return e ? e.value : ''; };
   function setVal(id, v) { const e = $('#j-' + id); if (e && v != null) e.value = v; }
   function fillForm() {
-    ['joSt', 'nama', 'nik', 'lahir', 'sim', 'simExp', 'rekan', 'kontakDarurat', 'pelanggan', 'alamatPelanggan', 'kmAwal', 'barangRinci', 'catatan'].forEach((k) => setVal(k, S[k] || ''));
+    ['nama', 'barangRinci', 'catatan'].forEach((k) => setVal(k, S[k] || ''));
     setVal('tanggal', S.dateISO); setVal('berangkat', S.departTime); $('#j-roundTrip').checked = !!S.roundTrip; $('#j-remember').checked = !!S.remember;
-    ['kim', 'partner', 'kondisi', 'lebar', 'permukaan'].forEach((n) => $$(`input[name="j-${n}"]`).forEach((i) => { i.checked = i.value === S[n]; }));
+    ['partner', 'kondisi', 'lebar', 'permukaan'].forEach((n) => $$(`input[name="j-${n}"]`).forEach((i) => { i.checked = i.value === S[n]; }));
     ['jalur', 'kendaraan', 'jenisJalan', 'barang'].forEach((n) => $$(`input[name="j-${n}"]`).forEach((i) => { i.checked = (S[n] || []).includes(i.value); }));
-    renderAkt(); updateUsia();
+    setVal('intervalJam', S.intervalJam); setVal('restMenit', S.restMenit); renderAkt(); updateUsia();
   }
   function readForm() {
-    ['joSt', 'nama', 'nik', 'lahir', 'sim', 'simExp', 'rekan', 'kontakDarurat', 'pelanggan', 'alamatPelanggan', 'kmAwal', 'barangRinci', 'catatan'].forEach((k) => { S[k] = val(k).trim(); });
+    ['nama', 'barangRinci', 'catatan'].forEach((k) => { S[k] = val(k).trim(); });
     S.dateISO = val('tanggal') || todayISO(); S.departTime = val('berangkat') || '07:00'; S.roundTrip = $('#j-roundTrip').checked; S.remember = $('#j-remember').checked;
-    ['kim', 'partner', 'kondisi', 'lebar', 'permukaan'].forEach((n) => { const c = $(`input[name="j-${n}"]:checked`); S[n] = c ? c.value : ''; });
+    ['partner', 'kondisi', 'lebar', 'permukaan'].forEach((n) => { const c = $(`input[name="j-${n}"]:checked`); S[n] = c ? c.value : ''; });
     ['jalur', 'kendaraan', 'jenisJalan', 'barang'].forEach((n) => { S[n] = $$(`input[name="j-${n}"]:checked`).map((i) => i.value); });
-    S.aktivitas = $$('#j-akt .jakt').map((r) => ({ nama: $('.an', r).value.trim(), menit: $('.am', r).value.trim() ? Math.round(parseFloat($('.am', r).value.replace(',', '.')) * 60) : '' }));
-    S.simExpired = !!(S.simExp && S.simExp < S.dateISO);
-    if (S.lahir) { const b = new Date(S.lahir), t = new Date(S.dateISO); let u = t.getFullYear() - b.getFullYear(); if (t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) u--; S.usia = u > 0 && u < 100 ? u : ''; } else S.usia = '';
+    const rows = (sel, unit) => $$(sel + ' .jakt').map((r) => ({ nama: $('.an', r).value.trim(), menit: $('.am', r).value.trim() ? Math.round(parseFloat($('.am', r).value.replace(',', '.')) * unit) : '' }));
+    S.aktivitas = rows('#j-akt', 60); S.istirahat = rows('#j-ist', 1);
+    S.intervalJam = Math.min(4, Math.max(1, parseFloat(val('intervalJam').replace(',', '.')) || 2)); S.restMenit = Math.min(120, Math.max(10, parseInt(val('restMenit'), 10) || 30));
   }
-  function updateUsia() { readForm(); const e = $('#j-usia'); const w = []; if (S.usia) w.push(`Usia: ${S.usia} tahun.`); if (S.simExpired) w.push('⚠ Masa berlaku SIM sudah lewat sebelum tanggal perjalanan.'); if (S.kim === 'tidak') w.push('⚠ Tanpa KIM, pengemudian kendaraan operasional tidak diizinkan.'); e.textContent = w.join(' '); e.className = 'jsmall' + (w.some((x) => x.startsWith('⚠')) ? ' jwarn' : ''); }
-  function renderAkt() {
-    const box = $('#j-akt'); box.innerHTML = '';
-    (S.aktivitas.length ? S.aktivitas : [{ nama: '', menit: '' }]).forEach((a, i) => {
+  function updateUsia() { readForm(); const t = (S.aktivitas.concat(S.istirahat)).reduce((n, x) => n + (+x.menit || 0), 0); const e = $('#j-total'); if (e) e.textContent = t ? `Total waktu di lokasi (pekerjaan + istirahat): ${C.minToHM(t)}` : ''; }
+  function renderList(sel, key, unit, ph, uph) {
+    const box = $(sel); box.innerHTML = '';
+    (S[key].length ? S[key] : [{ nama: '', menit: '' }]).forEach((a, i) => {
       const r = document.createElement('div'); r.className = 'jakt';
-      r.innerHTML = `<span class="no">${i + 1}</span><input class="an" type="text" placeholder="mis. Inspeksi mesin" value="${esc(a.nama)}"><input class="am" type="number" min="0" step="0.25" placeholder="jam" value="${a.menit ? +(a.menit / 60).toFixed(2) : ''}"><button type="button" class="jbtn x" title="Hapus">×</button>`;
-      $('.x', r).onclick = () => { readForm(); S.aktivitas.splice(i, 1); if (!S.aktivitas.length) S.aktivitas = [{ nama: '', menit: '' }]; renderAkt(); schedule(); };
+      r.innerHTML = `<span class="no">${i + 1}</span><input class="an" type="text" placeholder="${ph}" value="${esc(a.nama)}"><input class="am" type="number" min="0" step="${unit === 60 ? 0.25 : 5}" placeholder="${uph}" value="${a.menit ? +(a.menit / unit).toFixed(2) : ''}"><button type="button" class="jbtn x" title="Hapus">×</button>`;
+      $('.x', r).onclick = () => { readForm(); S[key].splice(i, 1); if (!S[key].length) S[key] = [{ nama: '', menit: '' }]; renderAkt(); updateUsia(); schedule(); };
       box.appendChild(r);
     });
   }
-
+  function renderAkt() { renderList('#j-akt', 'aktivitas', 60, 'mis. Inspeksi mesin', 'jam'); renderList('#j-ist', 'istirahat', 1, 'mis. Makan siang', 'menit'); }
   /* ---------- titik lokasi ---------- */
   const mapsDir = (o, d) => `https://www.google.com/maps/dir/?api=1&origin=${o.lat.toFixed(6)},${o.lng.toFixed(6)}&destination=${d.lat.toFixed(6)},${d.lng.toFixed(6)}&travelmode=driving`;
   function showPoint(which, p) {
@@ -211,8 +209,8 @@
       const tf = C.timeFactor(S);
       const wxO = await getWx(origin.lat, origin.lng, S.dateISO); if (my !== busyCalc) return;
       const sun = wxO && wxO.daily && wxO.daily.sunrise ? { rise: wxO.daily.sunrise[0].slice(11, 16), set: wxO.daily.sunset[0].slice(11, 16) } : { rise: '06:00', set: '18:00' };
-      const actMin = S.aktivitas.reduce((n, x) => n + (+x.menit || 0), 0);
-      const plan = C.planTrip({ dateISO: S.dateISO, departTime: S.departTime, driveMin: rt.minRaw * tf.factor, roundTrip: S.roundTrip, activityMin: actMin, sunrise: sun.rise, sunset: sun.set });
+      const actMin = S.aktivitas.concat(S.istirahat).reduce((n, x) => n + (+x.menit || 0), 0);
+      const plan = C.planTrip({ dateISO: S.dateISO, departTime: S.departTime, driveMin: rt.minRaw * tf.factor, intervalMin: S.intervalJam * 60, restMin: S.restMenit, roundTrip: S.roundTrip, activityMin: actMin, sunrise: sun.rise, sunset: sun.set });
       const cum = C.cumulative(rt.coords);
       const bpts = plan.breaks.map((b) => C.pointAtKm(rt.coords, cum, cum[cum.length - 1] * b.frac));
       const ovPt = plan.overnight ? C.pointAtKm(rt.coords, cum, cum[cum.length - 1] * plan.overnight.frac) : null;
@@ -247,9 +245,9 @@
   }
   function render() {
     const p = A.plan, r = A.risk; if (!p) return;
-    const hardStop = [S.kondisi === 'tutup' && 'Jalan ditandai tidak dapat dilalui.', S.kim === 'tidak' && 'Belum memiliki KIM.', S.simExpired && 'SIM sudah tidak berlaku.'].filter(Boolean);
+    const hardStop = [S.kondisi === 'tutup' && 'Jalan ditandai tidak dapat dilalui.'].filter(Boolean);
     $('#j-out').innerHTML = `
-      ${hardStop.length ? `<div class="jalert">⛔ Perjalanan sebagai pengemudi tidak boleh dilakukan: ${hardStop.join(' ')} Selesaikan dulu atau gunakan pengemudi berizin.</div>` : ''}
+      ${hardStop.length ? `<div class="jalert">⛔ Perjalanan tidak boleh dilakukan: ${hardStop.join(' ')} Pilih rute lain atau tunda.</div>` : ''}
       <div class="jstats">
         <div><b>${A.distKm.toFixed(0)} km</b><span>jarak${S.roundTrip ? ' sekali jalan' : ''}</span></div>
         <div><b>${C.minToHM(p.D)}</b><span>mengemudi</span></div>
@@ -330,14 +328,16 @@
       if (t.id === 'j-remember' && !t.checked) clearProfile();
       readForm(); updateUsia(); saveProfile(); schedule();
     });
-    body.addEventListener('input', (e) => { if (e.target.id === 'j-pesan') S.pesanEdited = true; if (['j-nama', 'j-nik', 'j-sim', 'j-lahir', 'j-simExp'].includes(e.target.id)) { readForm(); updateUsia(); saveProfile(); } if (e.target.closest('#j-akt') || e.target.id === 'j-berangkat') schedule(1200); });
+    body.addEventListener('input', (e) => { if (e.target.id === 'j-pesan') S.pesanEdited = true; if (e.target.id === 'j-nama') { readForm(); saveProfile(); } if (e.target.closest('#j-akt') || e.target.closest('#j-ist') || ['j-berangkat', 'j-intervalJam', 'j-restMenit'].includes(e.target.id)) { updateUsia(); schedule(1200); } });
     ['asal', 'tujuan'].forEach((w) => { $('#j-' + w).addEventListener('change', () => resolveInput(w)); $('#j-' + w).addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); resolveInput(w); } }); $('#j-cari-' + w).onclick = () => resolveInput(w); });
     $('#j-gps').onclick = () => { if (!navigator.geolocation) return J.toast('Perangkat tidak mendukung lokasi.'); $('#j-res-asal').textContent = 'Mengambil lokasi…'; navigator.geolocation.getCurrentPosition(async (pos) => { const la = pos.coords.latitude, ln = pos.coords.longitude; const label = await reverse(la, ln); $('#j-asal').value = `${la.toFixed(5)}, ${ln.toFixed(5)}`; setPoint('asal', { lat: la, lng: ln, label }); }, () => { $('#j-res-asal').innerHTML = '<span class="bad">Lokasi tidak diizinkan.</span> Aktifkan izin lokasi atau ketik titik berangkat.'; }, { enableHighAccuracy: true, timeout: 15000 }); };
     $('#j-addAkt').onclick = () => { readForm(); S.aktivitas.push({ nama: '', menit: '' }); renderAkt(); };
+    $('#j-addIst').onclick = () => { readForm(); S.istirahat.push({ nama: '', menit: '' }); renderAkt(); };
+    $('#j-now').onclick = () => { const d = new Date(); $('#j-berangkat').value = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; $('#j-tanggal').value = todayISO(); schedule(0); };
     $('#j-calc').onclick = () => { cache.wx.clear(); calc(); };
     $('#j-forget').onclick = (e) => { e.preventDefault(); clearProfile(); $('#j-remember').checked = false; S.remember = false; J.toast('Data tersimpan dihapus dari perangkat ini.'); };
     $('#j-pdf').onclick = (e) => doPDF(e.currentTarget); $('#j-docx').onclick = (e) => doDOCX(e.currentTarget); $('#j-wa').onclick = doWA;
-    $('#j-reset').onclick = () => { if (!confirm('Kosongkan semua isian JRM?')) return; Object.assign(S, { aktivitas: [{ nama: '', menit: '' }], riskManual: null, pesanEdited: false, permukaanManual: false, joSt: '', pelanggan: '', alamatPelanggan: '', kmAwal: '', barangRinci: '', catatan: '', rekan: '' }); origin = dest = null; A = {}; ['asal', 'tujuan'].forEach((w) => { $('#j-' + w).value = ''; showPoint(w, null); }); $('#j-pesan').value = ''; $('#j-out').innerHTML = ''; fillForm(); };
+    $('#j-reset').onclick = () => { if (!confirm('Kosongkan semua isian JRM?')) return; Object.assign(S, { aktivitas: [{ nama: '', menit: '' }], istirahat: [{ nama: 'Makan siang dan ibadah', menit: 60 }], intervalJam: 2, restMenit: 30, riskManual: null, pesanEdited: false, permukaanManual: false, barangRinci: '', catatan: '' }); origin = dest = null; A = {}; ['asal', 'tujuan'].forEach((w) => { $('#j-' + w).value = ''; showPoint(w, null); }); $('#j-pesan').value = ''; $('#j-out').innerHTML = ''; fillForm(); };
   }
   function open() { build(); fillForm(); const m = $('#modalJrm'); m.hidden = false; const f = $('#j-nama'); setTimeout(() => f && !f.value && f.focus(), 40); J.Mascot.play('present', 2600); }
   window.JASMIN_JRM = { open };

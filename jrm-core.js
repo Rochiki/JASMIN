@@ -227,12 +227,8 @@
     const fmtD = (d) => (d ? dayName(d) : '');
     const mapsUrl = a.mapsUrl || '';
     const info = [
-      ['No. JO / ST', s.joSt || '-'], ['Tanggal', s.dateISO ? dayName(mkDate(s.dateISO, '00.00')) : '-'],
-      ['Nama', s.nama || '-'], ['Tujuan', a.destLabel || s.tujuan || '-'],
-      ['NIK', s.nik || '-'], ['Nama pelanggan', s.pelanggan || '-'],
-      ['Usia', s.usia ? `${s.usia} tahun` : '-'], ['Alamat pelanggan', s.alamatPelanggan || a.destLabel || '-'],
-      ['No. SIM', s.sim ? `${s.sim}${s.simExp ? ` (berlaku s.d. ${s.simExp})` : ''}` : '-'], ['Memiliki izin mengemudi internal (KIM)', s.kim === 'ya' ? 'Ya' : s.kim === 'tidak' ? 'Tidak' : '-'],
-      ['Partner', one(s.partner, 'partner') + (s.rekan ? `   Rekan: ${s.rekan}` : '')], ['Kontak darurat', s.kontakDarurat || '-'],
+      ['Tanggal', s.dateISO ? dayName(mkDate(s.dateISO, '00.00')) : '-'], ['Nama', s.nama || '-'],
+      ['Tujuan', a.destLabel || s.tujuan || '-'], ['Partner', one(s.partner, 'partner')],
     ];
     const transport = [
       ['Jalur yang dilalui', mark(s.jalur, 'jalur', 'jalur')], ['Jenis kendaraan', mark(s.kendaraan, 'k', 'kendaraan') + (s.kendaraanLain ? `   (${s.kendaraanLain})` : '')],
@@ -240,15 +236,12 @@
       ['Lebar jalan', one(s.lebar, 'lebar')], ['Permukaan jalan', one(s.permukaan, 'permukaan') + (a.elev ? `   (usulan otomatis: naik total ±${Math.round(a.elev.gain)} m, tertinggi ±${Math.round(a.elev.max)} m)` : '')],
       ['Barang yang diangkut', mark(s.barang, 'b', 'barang') + (s.barangRinci ? `   ${s.barangRinci}` : '')],
     ];
-    const km0 = parseFloat(String(s.kmAwal || '').replace(/\./g, '').replace(',', '.'));
     const total = (a.distKm || 0) * (s.roundTrip ? 2 : 1);
-    const kmAkhir = isFinite(km0) ? Math.round(km0 + total) : null;
     const detail = [
       ['Titik berangkat', a.originLabel || '-'], ['Titik tujuan', a.destLabel || '-'],
       ['Jarak tempuh', a.distKm ? `${a.distKm.toFixed(1).replace('.', ',')} km sekali jalan${s.roundTrip ? ` (pulang-pergi ±${total.toFixed(1).replace('.', ',')} km)` : ''}` : '-'],
-      ['Km awal / Km akhir (estimasi)', `${isFinite(km0) ? km0.toLocaleString('id-ID') : '-'} / ${kmAkhir != null ? kmAkhir.toLocaleString('id-ID') : '-'} km`],
       ['Risiko perjalanan', risk ? (risk.final === 'tinggi' ? '[ ] Risiko bahaya rendah   [x] Risiko bahaya tinggi' : '[x] Risiko bahaya rendah   [ ] Risiko bahaya tinggi') : '-'],
-      ['Waktu tempuh', plan ? `${minToHM(plan.D)} mengemudi (+ ${plan.nBreaks} x ${plan.rest} menit istirahat)` : '-'],
+      ['Waktu tempuh', plan ? `${minToHM(plan.D)} mengemudi (+ ${plan.nBreaks} x ${plan.rest} menit istirahat, setiap ${plan.interval / 60} jam mengemudi)` : '-'],
       ['Waktu berangkat', plan ? `Pukul ${hhmm(plan.dep)}` : '-'], ['Waktu tiba (estimasi)', plan ? `Pukul ${hhmm(plan.arrive)}` : '-'],
     ];
     if (plan && plan.ret) detail.push(['Perkiraan kembali', `Berangkat ${hhmm(plan.ret.depart)}, tiba ${hhmm(plan.ret.arrive)}`]);
@@ -259,8 +252,9 @@
       if (!rests.length) rests.push(['Istirahat', '-', 'Perjalanan singkat, tidak diperlukan istirahat terjadwal', '-']);
     }
     const wx = (a.weather || []).filter((w) => w && w.d).map((w) => [w.label, w.timeText, wxText(w.d), w.d.aqi != null ? `${w.d.aqi} (${aqiCat(w.d.aqi)})` : '-']);
-    const acts = (s.aktivitas || []).filter((x) => x.nama).map((x, i) => [String(i + 1), x.nama, x.menit ? minToHM(+x.menit) : '-']);
-    const actTotal = (s.aktivitas || []).reduce((n, x) => n + (+x.menit || 0), 0);
+    const A1 = (s.aktivitas || []).filter((x) => x.nama), R1 = (s.istirahat || []).filter((x) => x.nama);
+    const acts = A1.map((x, i) => [String(i + 1), x.nama, x.menit ? minToHM(+x.menit) : '-']).concat(R1.map((x, i) => [String(A1.length + i + 1), 'Istirahat: ' + x.nama, x.menit ? minToHM(+x.menit) : '-']));
+    const actTotal = A1.concat(R1).reduce((n, x) => n + (+x.menit || 0), 0);
     const safety = (s.pesan && s.pesan.trim() ? s.pesan.split('\n').map((x) => x.replace(/^[-•\s]+/, '').trim()).filter(Boolean) : (a.safetyAuto || []));
     return {
       title: 'JOURNEY RISK MANAGEMENT (JRM)', createdAt: new Date(), info, transport, detail, rests, wx, acts, actTotal,
@@ -309,8 +303,8 @@
     if (m.warn.length || m.latestDepart) { const t = m.warn.map((w) => '! ' + w).concat(m.latestDepart ? ['Saran: berangkat paling lambat pukul ' + m.latestDepart + ' agar tiba sebelum gelap.'] : []); doc.autoTable({ startY: y, body: t.map((x) => [pdfSafe(x)]), theme: 'plain', margin: { left: M, right: M }, styles: { fontSize: 8.3, textColor: [160, 40, 20], cellPadding: 1 } }); y = doc.lastAutoTable.finalY; }
     section('PERKIRAAN WAKTU ISTIRAHAT, LOKASI, DAN CUACA'); grid(['Kegiatan', 'Waktu', 'Lokasi', 'Cuaca'], m.rests, { 0: { cellWidth: 34 }, 1: { cellWidth: 24 } });
     if (m.wx.length) { section('CUACA DAN KUALITAS UDARA DI SEPANJANG RUTE'); grid(['Titik', 'Waktu', 'Kondisi', 'AQI'], m.wx, { 0: { cellWidth: 40 }, 1: { cellWidth: 22 }, 3: { cellWidth: 34 } }); }
-    section('AKTIVITAS DAN ESTIMASI WAKTU PENGERJAAN'); grid(['No', 'Aktivitas', 'Estimasi'], m.acts.length ? m.acts : [['-', '(tidak diisi)', '-']], { 0: { cellWidth: 10 }, 2: { cellWidth: 32 } });
-    if (m.acts.length) { doc.setFontSize(8.5); doc.setTextColor(60); doc.text(pdfSafe('Total estimasi pengerjaan: ' + minToHM(m.actTotal)), M, y + 4); y += 6; }
+    section('AKTIVITAS, RENCANA ISTIRAHAT DAN ESTIMASI WAKTU PENGERJAAN'); grid(['No', 'Aktivitas', 'Estimasi'], m.acts.length ? m.acts : [['-', '(tidak diisi)', '-']], { 0: { cellWidth: 10 }, 2: { cellWidth: 32 } });
+    if (m.acts.length) { doc.setFontSize(8.5); doc.setTextColor(60); doc.text(pdfSafe('Total estimasi di lokasi (pekerjaan + istirahat): ' + minToHM(m.actTotal)), M, y + 4); y += 6; }
     if (m.risk) { section(`PENILAIAN RISIKO PERJALANAN: ${m.risk.level === 'tinggi' ? 'RISIKO BAHAYA TINGGI' : 'RISIKO BAHAYA RENDAH'}`); grid(['Faktor risiko', 'Poin'], m.risk.factors.length ? m.risk.factors.map((f) => [f.text, String(f.pts)]) : [['Tidak ada faktor risiko menonjol terdeteksi', '0']], { 1: { cellWidth: 16 } }); }
     section('PESAN KESELAMATAN'); doc.autoTable({ startY: y, body: m.safety.map((x) => [pdfSafe('- ' + x)]), theme: 'plain', margin: { left: M, right: M }, styles: { fontSize: 8.5, cellPadding: 0.9, textColor: 30 } }); y = doc.lastAutoTable.finalY;
     if (m.catatan) { section('CATATAN'); doc.autoTable({ startY: y, body: [[pdfSafe(m.catatan)]], theme: 'plain', margin: { left: M, right: M }, styles: { fontSize: 8.5 } }); y = doc.lastAutoTable.finalY; }
@@ -351,8 +345,8 @@
     if (m.warn.length || m.latestDepart) { ch.push(gap()); m.warn.forEach((w) => ch.push(para('! ' + w, { color: 'A02814', size: 18 }))); if (m.latestDepart) ch.push(para('Saran: berangkat paling lambat pukul ' + m.latestDepart + ' agar tiba sebelum gelap.', { color: 'A02814', size: 18 })); }
     ch.push(gap(), bar('PERKIRAAN WAKTU ISTIRAHAT, LOKASI, DAN CUACA'), grid(['Kegiatan', 'Waktu', 'Lokasi', 'Cuaca'], m.rests, [20, 14, 36, 30]));
     if (m.wx.length) ch.push(gap(), bar('CUACA DAN KUALITAS UDARA DI SEPANJANG RUTE'), grid(['Titik', 'Waktu', 'Kondisi', 'AQI'], m.wx, [24, 12, 44, 20]));
-    ch.push(gap(), bar('AKTIVITAS DAN ESTIMASI WAKTU PENGERJAAN'), grid(['No', 'Aktivitas', 'Estimasi'], m.acts.length ? m.acts : [['-', '(tidak diisi)', '-']], [8, 72, 20]));
-    if (m.acts.length) ch.push(para('Total estimasi pengerjaan: ' + minToHM(m.actTotal), { size: 17 }));
+    ch.push(gap(), bar('AKTIVITAS, RENCANA ISTIRAHAT DAN ESTIMASI WAKTU PENGERJAAN'), grid(['No', 'Aktivitas', 'Estimasi'], m.acts.length ? m.acts : [['-', '(tidak diisi)', '-']], [8, 72, 20]));
+    if (m.acts.length) ch.push(para('Total estimasi di lokasi (pekerjaan + istirahat): ' + minToHM(m.actTotal), { size: 17 }));
     if (m.risk) ch.push(gap(), bar(`PENILAIAN RISIKO PERJALANAN: ${m.risk.level === 'tinggi' ? 'RISIKO BAHAYA TINGGI' : 'RISIKO BAHAYA RENDAH'}`), grid(['Faktor risiko', 'Poin'], m.risk.factors.length ? m.risk.factors.map((f) => [f.text, String(f.pts)]) : [['Tidak ada faktor risiko menonjol terdeteksi', '0']], [88, 12]));
     ch.push(gap(), bar('PESAN KESELAMATAN')); m.safety.forEach((x) => ch.push(para('• ' + x, { size: 18 })));
     if (m.catatan) ch.push(gap(), bar('CATATAN'), para(m.catatan, { size: 18 }));
