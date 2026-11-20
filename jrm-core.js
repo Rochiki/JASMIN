@@ -192,7 +192,7 @@
     if ((s.barang || []).includes('mesin')) add(1, 'Membawa mesin / unit berat', 'Ikat dengan tali/ratchet yang layak, jangan sentuhkan ke kaca kabin, periksa ikatan tiap istirahat.');
     if (s.partner === 'sendiri' && km > 150) add(1, 'Mengemudi sendirian pada jarak jauh', 'Aktifkan lapor posisi berkala; beri tahu atasan jam tiba.');
     if ((s.jalur || []).some((k) => ['laut', 'sungai', 'udara'].includes(k))) add(1, 'Perjalanan melibatkan moda laut/sungai/udara', 'Pakai jaket pelampung/ikuti prosedur moda; pastikan jadwal dan cuaca layak.');
-    if (s.vt === 'tidak') add(3, 'Fungsi VT Device tidak aman' + (s.vtCatatan ? ' (' + s.vtCatatan + ')' : ''), 'Laporkan ke atasan/penanggung jawab VT dan perbaiki sebelum berangkat; perjalanan tanpa VT berfungsi tidak dianjurkan.');
+    if (s.vt === 'rusak') add(3, 'Fungsi VT Device rusak' + (s.vtCatatan ? ' (' + s.vtCatatan + ')' : ''), 'Laporkan ke atasan/penanggung jawab VT dan perbaiki sebelum berangkat; perjalanan tanpa VT berfungsi tidak dianjurkan.');
     if (s.inspeksi === 'tidak') add(5, 'Hasil inspeksi kendaraan: tidak aman' + (s.inspeksiCatatan ? ' (' + s.inspeksiCatatan + ')' : ''), 'Jangan berangkat sebelum temuan diperbaiki dan kendaraan dinyatakan layak; gunakan kendaraan pengganti.');
     (a.weather || []).forEach((w) => {
       if (!w || !w.d) return;
@@ -230,7 +230,7 @@
       ['Tanggal', s.dateISO ? dayName(mkDate(s.dateISO, '00.00')) : '-'], ['Tujuan', a.destLabel || s.tujuan || '-'],
       ['Kendaraan yang digunakan', mark(s.kendaraan, 'k', 'kendaraan') + (s.kendaraanLain ? `   (${s.kendaraanLain})` : '')], ['Plat nomor', s.plat || '-'],
       ['Partner', one(s.partner, 'partner')], ['Hasil inspeksi kendaraan', (s.inspeksi === 'aman' ? '[x] Aman   [ ] Tidak aman' : s.inspeksi === 'tidak' ? '[ ] Aman   [x] Tidak aman' : '[ ] Aman   [ ] Tidak aman') + (s.inspeksi === 'tidak' ? `   Catatan: ${s.inspeksiCatatan || '-'}` : '')],
-      ['Fungsi VT Device', (s.vt === 'aman' ? '[x] Aman   [ ] Tidak aman' : s.vt === 'tidak' ? '[ ] Aman   [x] Tidak aman' : '[ ] Aman   [ ] Tidak aman') + (s.vt === 'tidak' ? `   Catatan: ${s.vtCatatan || '-'}` : '')], ['', ''],
+      ['Fungsi VT Device', (s.vt === 'baik' ? '[x] Baik   [ ] Rusak' : s.vt === 'rusak' ? '[ ] Baik   [x] Rusak' : '[ ] Baik   [ ] Rusak') + (s.vt === 'rusak' ? `   Catatan: ${s.vtCatatan || '-'}` : '')], ['', ''],
     ];
     const transport = [
       ['Jalur yang dilalui', mark(s.jalur, 'jalur', 'jalur')],

@@ -100,8 +100,8 @@
       <div class="jgrid">${fld('plat', 'Plat nomor', 'autocapitalize="characters" maxlength="12"', 'text', 'mis. B 1234 XYZ')}<div class="jf"><span>Partner</span>${chips('partner', 'partner', false)}</div></div>
       <div class="jf"><span>Hasil inspeksi kendaraan</span><div class="jchips" data-name="inspeksi" data-multi="0"><label class="jchip"><input type="radio" name="j-inspeksi" value="aman"><span>Aman</span></label><label class="jchip"><input type="radio" name="j-inspeksi" value="tidak"><span>Tidak aman</span></label></div></div>
       <label class="jf" id="j-inspWrap" hidden><span>Catatan temuan (wajib bila tidak aman)</span><textarea id="j-inspeksiCatatan" rows="2" placeholder="mis. rem terasa kurang pakem, ban depan kiri aus"></textarea></label>
-      <div class="jf"><span>Fungsi VT Device</span><div class="jchips" data-name="vt" data-multi="0"><label class="jchip"><input type="radio" name="j-vt" value="aman"><span>Aman</span></label><label class="jchip"><input type="radio" name="j-vt" value="tidak"><span>Tidak aman</span></label></div></div>
-      <label class="jf" id="j-vtWrap" hidden><span>Catatan VT Device (wajib bila tidak aman)</span><textarea id="j-vtCatatan" rows="2" placeholder="mis. lampu indikator mati, tidak ada sinyal GPS, DID Tag tidak terbaca"></textarea></label>
+      <div class="jf"><span>Fungsi VT Device</span><div class="jchips" data-name="vt" data-multi="0"><label class="jchip"><input type="radio" name="j-vt" value="baik"><span>Baik</span></label><label class="jchip"><input type="radio" name="j-vt" value="rusak"><span>Rusak</span></label></div></div>
+      <label class="jf" id="j-vtWrap" hidden><span>Catatan VT Device (wajib bila rusak)</span><textarea id="j-vtCatatan" rows="2" placeholder="mis. lampu indikator mati, tidak ada sinyal GPS, DID Tag tidak terbaca"></textarea></label>
       <p class="jsmall" id="j-usia"></p></section>
 
     <section class="jcard"><h4>2. Rute (cukup tempel link Google Maps)</h4><div class="jgrid">
@@ -155,7 +155,7 @@
     S.aktivitas = rows('#j-akt', 60); S.istirahat = rows('#j-ist', 1);
     S.intervalJam = Math.min(3, Math.max(1, parseFloat(val('intervalJam').replace(',', '.')) || 3)); S.restMenit = Math.min(120, Math.max(15, parseInt(val('restMenit'), 10) || 15));
   }
-  function updateUsia() { readForm(); const w = $('#j-inspWrap'); if (w) w.hidden = S.inspeksi !== 'tidak'; const vw = $('#j-vtWrap'); if (vw) vw.hidden = S.vt !== 'tidak'; const ie = $('#j-usia'); if (ie) { ie.textContent = [S.inspeksi === 'tidak' && '⚠ Kendaraan tidak aman: jangan berangkat sebelum diperbaiki atau diganti.', S.vt === 'tidak' && '⚠ VT Device tidak aman: laporkan dan perbaiki sebelum berangkat.'].filter(Boolean).join(' '); ie.className = 'jsmall jwarn'; } const t = (S.aktivitas.concat(S.istirahat)).reduce((n, x) => n + (+x.menit || 0), 0); const e = $('#j-total'); if (e) e.textContent = t ? `Total waktu di lokasi (pekerjaan + istirahat): ${C.minToHM(t)}` : ''; }
+  function updateUsia() { readForm(); const w = $('#j-inspWrap'); if (w) w.hidden = S.inspeksi !== 'tidak'; const vw = $('#j-vtWrap'); if (vw) vw.hidden = S.vt !== 'rusak'; const ie = $('#j-usia'); if (ie) { ie.textContent = [S.inspeksi === 'tidak' && '⚠ Kendaraan tidak aman: jangan berangkat sebelum diperbaiki atau diganti.', S.vt === 'rusak' && '⚠ VT Device rusak: laporkan dan perbaiki sebelum berangkat.'].filter(Boolean).join(' '); ie.className = 'jsmall jwarn'; } const t = (S.aktivitas.concat(S.istirahat)).reduce((n, x) => n + (+x.menit || 0), 0); const e = $('#j-total'); if (e) e.textContent = t ? `Total waktu di lokasi (pekerjaan + istirahat): ${C.minToHM(t)}` : ''; }
   function renderList(sel, key, unit, ph, uph) {
     const box = $(sel); box.innerHTML = '';
     (S[key].length ? S[key] : [{ nama: '', menit: '' }]).forEach((a, i) => {
@@ -243,7 +243,7 @@
   }
   function render() {
     const p = A.plan, r = A.risk; if (!p) return;
-    const hardStop = [S.kondisi === 'tutup' && 'Jalan ditandai tidak dapat dilalui.', S.inspeksi === 'tidak' && 'Kendaraan dinyatakan tidak aman.', S.vt === 'tidak' && 'VT Device tidak berfungsi dengan aman.'].filter(Boolean);
+    const hardStop = [S.kondisi === 'tutup' && 'Jalan ditandai tidak dapat dilalui.', S.inspeksi === 'tidak' && 'Kendaraan dinyatakan tidak aman.', S.vt === 'rusak' && 'VT Device rusak.'].filter(Boolean);
     $('#j-out').innerHTML = `
       ${hardStop.length ? `<div class="jalert">⛔ Perjalanan tidak boleh dilakukan: ${hardStop.join(' ')} Pilih rute lain atau tunda.</div>` : ''}
       <div class="jstats">
@@ -283,7 +283,7 @@
   /* ---------- model & unduhan ---------- */
   function model() {
     readForm();
-    const miss = []; if (!S.plat) miss.push('plat nomor'); if (!S.inspeksi) miss.push('hasil inspeksi kendaraan'); if (!S.vt) miss.push('fungsi VT Device'); if (S.vt === 'tidak' && !S.vtCatatan) miss.push('catatan VT Device'); if (S.inspeksi === 'tidak' && !S.inspeksiCatatan) miss.push('catatan inspeksi'); if (!origin) miss.push('titik berangkat'); if (!dest) miss.push('titik tujuan');
+    const miss = []; if (!S.plat) miss.push('plat nomor'); if (!S.inspeksi) miss.push('hasil inspeksi kendaraan'); if (!S.vt) miss.push('fungsi VT Device'); if (S.vt === 'rusak' && !S.vtCatatan) miss.push('catatan VT Device'); if (S.inspeksi === 'tidak' && !S.inspeksiCatatan) miss.push('catatan inspeksi'); if (!origin) miss.push('titik berangkat'); if (!dest) miss.push('titik tujuan');
     if (miss.length) { J.toast('Lengkapi dulu: ' + miss.join(', ') + '.'); return null; }
     if (!A.plan) { J.toast('Hasil otomatis belum siap. Tunggu sebentar atau tekan Hitung ulang.'); return null; }
     A.risk.final = S.riskManual || A.risk.final;
