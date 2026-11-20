@@ -67,14 +67,17 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
       clearTimeout(speechTimer);
       speechTimer = setTimeout(() => speech.classList.add('hide'), ms);
     }
-    // gerakan kecil acak saat diam, supaya karakter terasa hidup
+    // saat diam, Teh JASMIN bergantian memakai SEMUA 8 gerakan lain (kantong acak: tiap putaran semua tampil sekali)
+    const ALL = ['wave', 'present', 'think', 'cheer', 'alert', 'thumbs', 'heart', 'tip'];
+    let bag = [];
+    const nextPose = () => { if (!bag.length) { bag = ALL.slice().sort(() => Math.random() - 0.5); if (bag[0] === lastAmbient) bag.push(bag.shift()); } return (lastAmbient = bag.shift()); };
+    let lastAmbient = '';
     if (!reduceMotion) {
-      const ambient = ['wave', 'present', 'tip', 'thumbs'];
       (function loop() {
         setTimeout(() => {
-          if (!document.hidden && !hold && current === 'idle') play(ambient[Math.floor(Math.random() * ambient.length)], 1900);
+          if (!document.hidden && !hold && current === 'idle') play(nextPose(), 2100);
           loop();
-        }, 9000 + Math.random() * 7000);
+        }, 3200 + Math.random() * 2600);
       })();
     }
     el.href = WA_URL;
@@ -800,7 +803,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
   function jseaReply(job, ctx = {}) {
     const f = buildForm(job, { brand: ctx.brand });
     const lead = ctx.approx ? `Pekerjaan yang paling mendekati di database adalah <b>${esc(job.title)}</b> — ini JSEA-nya, cek dulu apakah sesuai ya.` : `Siap! Ini JSEA untuk <b>${esc(job.title)}</b> — baca tiap langkahnya bersama tim sebelum mulai kerja ya.`;
-    return { html: `<p>${lead}</p>${formHTML(f)}`, wide: true, form: f, pose: 'present', poseMs: 3200, say: { id: ctx.approx ? 'Ini pekerjaan yang paling mendekati, cek dulu apakah sesuai ya.' : 'Siap! Ini JSEA-nya, baca tiap langkah bersama tim sebelum mulai kerja ya.', en: ctx.approx ? 'This is the closest job I found. Please check that it matches.' : 'Here is your JSEA. Please review each step with your team before starting work.' } };
+    return { html: `<p>${lead}</p>${formHTML(f)}`, wide: true, form: f, pose: 'cheer', poseMs: 3200, say: { id: ctx.approx ? 'Ini pekerjaan yang paling mendekati, cek dulu apakah sesuai ya.' : 'Siap! Ini JSEA-nya, baca tiap langkah bersama tim sebelum mulai kerja ya.', en: ctx.approx ? 'This is the closest job I found. Please check that it matches.' : 'Here is your JSEA. Please review each step with your team before starting work.' } };
   }
 
   function candidatesReply(list, intro) {

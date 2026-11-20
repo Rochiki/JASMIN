@@ -435,3 +435,6 @@ legend{font-weight:900;font-size:13.5px;padding:0 6px}
 .status-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .tut-pill{background:#C62828;color:#fff;border:2px solid var(--ink);border-radius:999px;padding:2px 11px;font:800 12px/1.5 inherit;cursor:pointer}
 .tut-pill:hover{background:#A91E1E}
+.mascot .f.show{animation:breathe 4.2s ease-in-out infinite,popin .35s ease-out}
+@keyframes popin{0%{transform:scale(.94) translateY(6px)}60%{transform:scale(1.03) translateY(-3px)}100%{transform:scale(1) translateY(0)}}
+@media (prefers-reduced-motion:reduce){.mascot .f.show{animation:none}}
