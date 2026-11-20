@@ -396,3 +396,14 @@ legend{font-weight:900;font-size:13.5px;padding:0 6px}
 .set-voice select{width:100%;padding:7px;border:1.5px solid #b5ad9c;border-radius:9px;background:#fff;font:inherit;margin-top:3px}
 .set-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .set-h{margin:6px 0 4px;font-size:15px}
+
+/* ---- widget: font Aptos + teks putih (terbaca di latar navy) ---- */
+.wx,.wx *{font-family:Aptos,"Aptos Display","Segoe UI",Calibri,Arial,sans-serif}
+.wx{background:linear-gradient(160deg,#2B3F73 0%,#1E2B4D 100%);color:#fff;border:2px solid rgba(255,255,255,.35)}
+.wx-place{background:rgba(255,255,255,.16);color:#fff}
+.wx-place:hover,.wx-place:focus-visible{background:rgba(255,255,255,.28)}
+.wx-clock b,.wx-clock small,.wx-tt b,.wx-tt small,.wx-meta,.wx-src,.wx-day,.wx-day small,.wx-day b,.wx-day em,.wx-aqi,.wx-aqi p,.aqi-row b,.aqi-row small{color:#fff}
+.wx-aqi,.wx-day{background:rgba(255,255,255,.12)}
+.wx-clock small,.wx-src,.aqi-row small{opacity:.85}
+.wx-search input{color:#1b2236}
+.wx-sug li,.wx-sug li b,.wx-sug li small{color:#1b2236}
