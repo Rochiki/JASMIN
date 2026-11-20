@@ -18,7 +18,6 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCES = [
   { file: 'sources/DATABASE_MASTER_JSEA_SERVICE_ALAT_BERAT.md', label: 'Database Master JSEA — Service Unit Alat Berat' },
   { file: 'sources/DATABASE_JSEA_SERVICE_TRUCK_MOBILE_WORKSHOP.md', label: 'Database JSEA — Service Truck, Mobile Workshop, dan Roadside Service' },
-  { file: 'sources/DATABASE_JSEA_TANGGAP_DARURAT.md', label: 'Database JSEA — Tanggap Darurat (Praktis Lapangan)' },
 ];
 
 const MODULES = {
@@ -28,7 +27,6 @@ const MODULES = {
   TRK: { name: 'Service Truck / Tractor Head', hint: 'Rem udara, common rail, kabin tilting, fifth wheel' },
   MWS: { name: 'Mobile Workshop', hint: 'Persiapan, mobilisasi, set-up lapangan, demobilisasi' },
   RSA: { name: 'Roadside Assistance', hint: 'Unit mogok di jalan hauling / jalan umum' },
-  DRT: { name: 'Tanggap Darurat', hint: 'Kebakaran, tumpahan B3, cedera berat, gempa, banjir, evakuasi, pelaporan' },
 };
 
 const BLOCKS = {
@@ -57,25 +55,8 @@ const PIC_RULES = [
   [/limbah|tumpahan|spill|pencucian|membersihkan|merapikan area|housekeeping|kebersihan/i, 'Technician / Helper'],
 ];
 const PIC_DEFAULT = 'Technician / Mechanic';
-/* Modul Tanggap Darurat (DRT): PIC menurut peran tim darurat, bukan teknisi. */
-const DRT_PIC_RULES = [
-  [/^(chief of emergency|coe |menetapkan keadaan darurat|menilai|memutuskan)/i, 'Chief of Emergency (COE)'],
-  [/^(warden|menyisir)/i, 'Warden'],
-  [/apar|pemadam|memadamkan|hidran|menyemprot/i, 'Regu Pemadam'],
-  [/rjp|p3k|korban|pertolongan|first aid|cedera|oralit|gigitan|aed/i, 'First Aider / Petugas P3K'],
-  [/security|polisi|kerusuhan|ancaman|perampokan|blokade|massa/i, 'Security'],
-  [/tumpahan|spill|absorben|limbah/i, 'Tim Tumpahan B3'],
-  [/listrik|gas |pompa|utilitas|panel|memeriksa kelayakan|inspeksi|menguji/i, 'Petugas Utilitas / Maintenance'],
-  [/melapor|laporan|komunikasi|radio|kontak|nomor darurat|menghubungi|mengumumkan/i, 'Tim Komunikasi'],
-  [/mengemudi|kendaraan|unit |menepi|berhenti|perjalanan/i, 'Operator / Driver'],
-];
-const DRT_PIC_DEFAULT = 'Semua personel di lokasi';
-function derivePIC(step, mod) {
+function derivePIC(step) {
   const s = step.replace(/\*\*/g, '');
-  if (mod === 'DRT') {
-    for (const [re, pic] of DRT_PIC_RULES) if (re.test(s)) return pic;
-    return DRT_PIC_DEFAULT;
-  }
   for (const [re, pic] of PIC_RULES) if (re.test(s)) return pic;
   return PIC_DEFAULT;
 }
@@ -127,7 +108,7 @@ function parseJob(lines, sourceIdx, part) {
       envImpacts: risks.filter((x) => x.cat === 'E').map((x) => x.text),
       controls: parseControls(c[4]),
       refs: splitRefs(c[5]),
-      pic: derivePIC(c[1], idm[1]),
+      pic: derivePIC(c[1]),
     };
   });
 
@@ -254,7 +235,7 @@ SOURCES.forEach((def, idx) => {
   jobs.push(...js);
 });
 
-const order = ['GEN', 'EXC', 'ADT', 'TRK', 'MWS', 'RSA', 'DRT'];
+const order = ['GEN', 'EXC', 'ADT', 'TRK', 'MWS', 'RSA'];
 const modules = order.filter((c) => jobs.some((j) => j.module === c)).map((code) => ({
   code,
   ...MODULES[code],

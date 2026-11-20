@@ -80,10 +80,9 @@ Ada di `qshe-updates.json` (kartu dengan daftar `aman`: huruf, judul, poin). Pak
 - Ikon ⚙ → *Suara Teh JASMIN*: pilih suara English/Indonesia sendiri dan klik "Coba suara".
 - Opsional: **suara AI Gemini** (Aoede, Leda, Zephyr, dst.) memakai API key Mode Cerdas. Jika gagal, otomatis kembali ke suara browser.
 
-## Modul Tanggap Darurat (DRT)
+## Tutorial Tanggap Darurat
 
-21 pekerjaan format JSEA 6 kolom untuk keadaan darurat: penilaian dan pelaporan, kebakaran (bangunan, unit, lahan), ledakan, tumpahan B3, cedera berat dan RJP, terjepit, kecelakaan lalu lintas, hilang kontak, sengatan listrik, rescue ketinggian/ruang terbatas, darurat medis, gempa/tsunami, banjir/petir, gangguan keamanan, keracunan makanan, evakuasi, inspeksi alat darurat, pasca darurat, dan kartu kontak.
+21 tutorial langkah-demi-langkah (bukan tabel JSEA): kartu aturan utama, langkah berurutan dengan penanda WAJIB / LAKUKAN / LINGKUNGAN / APD, daftar "Jangan lakukan", tips lapangan, alat yang disiapkan, dan dasar acuan. Muncul saat pengguna mengetik situasi darurat (mis. "ada kebakaran di workshop", "gempa", "tutorial darurat") atau lewat tombol 🚨 Tutorial Darurat.
 
-- Sumber: `sources/DATABASE_JSEA_TANGGAP_DARURAT.md`; jalankan `node tools/build-database.mjs` setelah mengubahnya.
-- PIC modul ini menurut peran tim darurat (COE, Warden, Regu Pemadam, First Aider, dst.) dan ditandai turunan.
-- Isi bersifat generik: nama kode warna, nomor telepon, titik kumpul, dan personel disesuaikan per lokasi (lihat DRT-21). Rujukan bertanda "perlu verifikasi" harus dicek sebelum dipakai resmi.
+- Sumber: `sources/tutorial/TUTORIAL_TANGGAP_DARURAT.md`; jalankan `node tools/build-tutorial.mjs` untuk membuat `tutorial-darurat.js`.
+- Isi bersifat umum: kode warna, nomor telepon, titik kumpul, dan personel disesuaikan per lokasi (Tutorial 21). Rujukan bertanda "perlu verifikasi" dicek dulu sebelum dipakai resmi.

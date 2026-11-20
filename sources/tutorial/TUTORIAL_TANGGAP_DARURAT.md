@@ -1,10 +1,11 @@
-# DATABASE JSEA — TANGGAP DARURAT (PRAKTIS LAPANGAN)
+# TUTORIAL TANGGAP DARURAT (PRAKTIS LAPANGAN)
+
+Catatan: sumber ini dipakai tools/build-tutorial.mjs untuk membuat tutorial langkah-demi-langkah (bukan tabel JSEA).
 
 Cakupan: tindakan 60 detik pertama, pembagian peran, dan pelaporan untuk keadaan darurat di kantor, bengkel, gudang, job site, perjalanan dinas, dan lokasi terpencil: kebakaran, ledakan, tumpahan B3, cedera berat dan henti jantung, terjepit dan unit bergerak sendiri, kecelakaan lalu lintas, hilang kontak, sengatan listrik, rescue ketinggian dan ruang terbatas, darurat medis, bencana alam, kabut asap, gangguan keamanan, keracunan makanan, serta kesiapan alat darurat dan pemulihan pasca kejadian.
 Sumber: panduan tanggap darurat nasional (kartu aksi per skenario), regulasi K3 yang berlaku, pedoman pertolongan pertama dan RJP (AHA/ERC), best practice industri, dan lesson learned investigasi insiden.
 
 Kode kategori: (S) Safety — (H) Occupational Health — (E) Environment.
-Kode modul: DRT = Tanggap Darurat.
 
 Catatan penggunaan: di lokasi milik pelanggan (tambang, kebun, pabrik) sistem darurat yang berlaku adalah sistem pelanggan; gunakan JSEA ini untuk melengkapi, bukan menggantikannya. Nama kode warna, nomor telepon, titik kumpul, dan nama personel disesuaikan dengan lokasi masing-masing dan wajib diisi pada kartu kontak darurat (lihat JSEA-DRT-21).
 

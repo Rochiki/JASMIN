@@ -519,7 +519,6 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     ['TRK', /\b(tractor head|trailer|fifth wheel|sadel|truck jalan raya|service truck|rem udara|common rail|tilting kabin|dpf|scr)\b/],
     ['MWS', /\b(mobile workshop|bengkel keliling|mws|genset|kompresor)\b/],
     ['RSA', /\b(roadside|rsa|mogok|breakdown|jalan hauling|jalan umum|panggilan darurat)\b/],
-    ['DRT', /\b(darurat|emergency|kebakaran|api|apar|gempa|tsunami|banjir|petir|evakuasi|rjp|p3k|henti jantung|tumpahan|ledakan|sengatan|keracunan|bom|kerusuhan|kabut asap|karhutla|ular|man down|hilang kontak)\b/],
     ['GEN', /\b(umum|generik|dasar|isolasi energi|zero energy|loto|lifting|rigging|perjalanan dinas|parkir)\b/],
   ];
 
@@ -768,7 +767,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
   const jobItem = (j, label = 'Buat JSEA ›') => `<button class="opt-item" type="button" data-act="jsea" data-code="${esc(j.code)}"><span class="code">${esc(j.code)}</span><span class="tt">${esc(j.title)}</span><span class="go">${label}</span></button>`;
 
   const MOD_ASK = [
-    ['EXC', 'Excavator Hidrolis'], ['ADT', 'Articulated Dump Truck / Hauler'], ['TRK', 'Service Truck / Tractor Head'], ['MWS', 'Mobile Workshop'], ['RSA', 'Roadside / Unit Mogok'], ['DRT', 'Tanggap Darurat (kebakaran, tumpahan, cedera, gempa, evakuasi)'], ['GEN', 'Umum (isolasi energi, lifting, perjalanan, parkir)'],
+    ['EXC', 'Excavator Hidrolis'], ['ADT', 'Articulated Dump Truck / Hauler'], ['TRK', 'Service Truck / Tractor Head'], ['MWS', 'Mobile Workshop'], ['RSA', 'Roadside / Unit Mogok'], ['GEN', 'Umum (isolasi energi, lifting, perjalanan, parkir)'],
   ];
   const modules = () => (DB ? DB.modules : []);
 
@@ -781,6 +780,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     return `<p>Siap, ini yang bisa Teh JASMIN bantu:</p><ul>
       <li><b>Buat JSEA</b> per jenis pekerjaan (bukan per merek/model), lengkap tabel 6 kolom sesuai Form JSEA.</li>
       <li><b>Unduh</b> hasilnya sebagai <b>PDF</b> siap cetak, <b>Excel</b>, atau salin langsung ke Excel.</li>
+      <li><b>Tutorial Tanggap Darurat</b> langkah demi langkah (kebakaran, tumpahan, RJP, gempa, banjir, evakuasi, dll.). Ketik <i>“kebakaran”</i> atau <i>“tutorial darurat”</i>.</li>
       <li>Jawab pertanyaan keselamatan dari database: aturan <i>zero energy state</i>, kesalahan umum, APD, tanggap darurat.</li></ul>
       <p>Kalau informasi tidak ada di database, saya tandai <span class="pv">${PV}</span> dan tidak mengarang angka.</p>
       <div class="opts">${optBtn('Buat JSEA Baru', 'data-act="ask" data-q="Buat JSEA Baru"')}${optBtn('Katalog Pekerjaan', 'data-act="catalog"')}${waBtn('💬 Hubungi Tim QSHE')}</div>`;
@@ -809,6 +809,70 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     return { pose: 'think', say: { id: 'Saya belum menemukan pekerjaan itu di database.', en: 'I could not find that job in the database.' }, html: `<p>Hmm, saya belum menemukan pekerjaan itu di database. Saya tidak mau menebak-nebak untuk urusan keselamatan.</p>
       <p>Coba kata kunci lain (nama komponen + aktivitas, mis. <i>“lepas silinder bucket”</i>) atau lihat katalog. Kalau pekerjaannya memang belum ada, <b>tunda dulu</b> dan konsultasikan dengan atasan atau tim QSHE.</p>
       <div class="opts">${optBtn('Buka Katalog', 'data-act="catalog"')}${waBtn()}</div>` };
+  }
+
+
+  /* ---- Tutorial Tanggap Darurat (langkah-demi-langkah, bukan JSEA) ---- */
+  const TUT = () => window.JASMIN_TUTOR || [];
+  const TUT_KW = {
+    '01': 'darurat alarm lapor melapor format level status', '02': 'kebakaran api bangunan kantor workshop gudang apar asap', '03': 'kebakaran terbakar unit alat berat kendaraan engine',
+    '04': 'ledakan meledak tabung gas akumulator ban rim bertekanan', '05': 'tumpahan oli bahan bakar kimia b3 bocor tumpah spill', '06': 'cedera berat henti napas jantung rjp pertolongan pingsan tidak sadar p3k pendarahan',
+    '07': 'terjepit tertimpa unit bergerak sendiri rollaway menggelinding', '08': 'kecelakaan lalu lintas terguling tabrakan kendaraan jalan', '09': 'hilang kontak man down terpencil tidak ada kabar',
+    10: 'sengatan listrik tersengat tersetrum busur api', 11: 'ketinggian ruang terbatas rescue jatuh penyelamatan', 12: 'medis jantung stroke kejang heat stroke gigitan ular sakit',
+    13: 'gempa tsunami bumi', 14: 'banjir angin kencang petir pohon tumbang cuaca ekstrem', 15: 'kebakaran lahan karhutla kabut asap hutan', 16: 'keamanan kerusuhan demo blokade bom ancaman perampokan begal pembegalan',
+    17: 'keracunan makanan massal katering', 18: 'evakuasi titik kumpul warden penghitungan personel', 19: 'inspeksi kesiapan alat darurat apar hidran alarm eyewash spill kit p3k',
+    20: 'pasca darurat tkp pelaporan pemulihan investigasi', 21: 'kartu kontak darurat orientasi lokasi kerja baru nomor telepon',
+  };
+  const TUT_RE = {
+    strong: /\b(tutorial|panduan darurat|tanggap darurat|darurat|emergency|kebakaran|terbakar|apar|gempa|tsunami|banjir|petir|evakuasi|rjp|henti jantung|henti napas|ledakan|meledak|sengatan listrik|tersengat listrik|tersetrum|keracunan|bom|kerusuhan|kabut asap|karhutla|gigitan ular|digigit ular|man down|hilang kontak|begal|perampokan|terguling|titik kumpul|pertolongan pertama)\b/,
+    weak: /\b(tumpahan|tumpah|bocor|terjepit|tertimpa|api|kecelakaan|korban|pingsan|kejang|tenggelam|jatuh dari)\b/,
+    now: /\b(ada|terjadi|barusan|baru saja|sekarang|lagi|tolong|sedang|cara|bagaimana|gimana|apa yang harus|harus apa)\b/,
+    not: /\b(jsea|susun|form|tabel|langkah kerja|buat jsea|katalog)\b/,
+  };
+  const tutIndex = () => TUT().map((t) => {
+    const kw = normalize(TUT_KW[t.id] || TUT_KW[Number(t.id)] || '').split(' ');
+    const title = new Set(tokenize(t.title));
+    const body = new Set(tokenize(t.steps.map((s) => s.do).join(' ')));
+    return { t, kw: new Set(kw), title, body };
+  });
+  function tutSearch(q) {
+    const toks = tokenize(q).filter((w) => !STOP.has(w) && w.length > 2);
+    return tutIndex().map((x) => {
+      let s = 0; toks.forEach((w) => { if (x.kw.has(w)) s += 3; else if (x.title.has(w)) s += 2.5; else if (x.body.has(w)) s += 0.6; });
+      return { t: x.t, s };
+    }).filter((r) => r.s > 0).sort((a, b) => b.s - a.s);
+  }
+  const tutWanted = (qn) => TUT().length && !TUT_RE.not.test(qn) && (TUT_RE.strong.test(qn) || (TUT_RE.weak.test(qn) && TUT_RE.now.test(qn)));
+  const tutItem = (t) => `<button class="opt-item" type="button" data-act="tutor" data-id="${esc(t.id)}"><span class="code">${esc(t.id)}</span><span class="tt">${esc(t.title)}</span><span class="go">Buka ›</span></button>`;
+  function tutorListReply(note) {
+    return { pose: 'present', say: { id: 'Pilih tutorial tanggap darurat yang Anda perlukan.', en: 'Choose the emergency tutorial you need.' }, html: `<p>${note || 'Berikut <b>Tutorial Tanggap Darurat</b>. Pilih situasinya, langkahnya langsung tampil.'}</p><div class="opt-list">${TUT().map(tutItem).join('')}</div>` };
+  }
+  const TK = { wajib: ['WAJIB', 'k-wajib'], lakukan: ['LAKUKAN', 'k-do'], lingkungan: ['LINGKUNGAN', 'k-env'], apd: ['APD', 'k-ppe'] };
+  function tutorReply(t) {
+    const li = (arr) => arr.map((x) => `<li>${rich(x)}</li>`).join('');
+    const steps = t.steps.map((s) => `<li class="tut-step"><div class="tut-do">${rich(s.do)}</div>${s.items.map((i) => `<div class="tut-it ${TK[i.k][1]}"><i>${TK[i.k][0]}</i><span>${rich(i.t)}</span></div>`).join('')}</li>`).join('');
+    const sec = (cls, h, arr) => arr && arr.length ? `<div class="tut-box ${cls}"><b>${h}</b><ul>${li(arr)}</ul></div>` : '';
+    const d = t.darurat, ap = t.apd;
+    const prep = [d.alat && `<b>Alat yang disiapkan:</b> ${d.alat}`, ap.wajib && `<b>APD:</b> ${ap.wajib}${ap.tambahan && ap.tambahan !== 'Tidak ada.' && ap.tambahan !== 'Tidak ada' ? '; tambahan: ' + ap.tambahan : ''}`, d.potensi && `<b>Yang bisa terjadi:</b> ${d.potensi}`, d.respon && `<b>Ringkasnya:</b> ${d.respon}`].filter(Boolean);
+    return { pose: 'alert', say: { id: `Tutorial ${t.title}. Ikuti langkahnya berurutan.`, en: 'Emergency tutorial. Follow the steps in order.' }, wide: true, html: `<div class="tut">
+      <div class="tut-h"><span class="tut-badge">TUTORIAL ${esc(t.id)}</span><b>${esc(t.title)}</b></div>
+      ${sec('tut-gold', 'Pegang aturan ini', t.aturan)}
+      <ol class="tut-steps">${steps}</ol>
+      ${sec('tut-no', 'Jangan lakukan', t.jangan)}
+      ${sec('tut-tips', 'Tips lapangan', t.tips.concat(t.perhatian))}
+      ${sec('tut-ready', 'Siapkan sebelum kejadian', t.siap)}
+      ${prep.length ? `<div class="tut-box tut-prep"><ul>${prep.map((x) => `<li>${x}</li>`).join('')}</ul></div>` : ''}
+      ${t.catatan ? `<p class="tut-note">${esc(t.catatan)}</p>` : ''}
+      ${t.dasar.length ? `<p class="tut-ref">Dasar acuan: ${esc(t.dasar.join('; '))}</p>` : ''}
+      <p class="tut-note">Isi bersifat umum. Sesuaikan nomor telepon, titik kumpul, dan personel dengan lokasi Anda. Di lokasi pelanggan, ikuti sistem darurat lokasi tersebut. Bila ragu atau tidak aman, hentikan pekerjaan dan hubungi atasan atau tim QSHE.</p>
+      <div class="opts">${optBtn('Tutorial darurat lainnya', 'data-act="tutlist"')}${waBtn('💬 Hubungi Tim QSHE')}</div></div>` };
+  }
+  function tutorRoute(qn, q) {
+    const r = tutSearch(q);
+    const top = r[0], sec = r[1];
+    if (!top || top.s < 2.5) return tutorListReply();
+    if (sec && sec.s >= top.s * 0.8) return { pose: 'think', say: { id: 'Ada beberapa tutorial yang mirip. Mana yang Anda maksud?', en: 'A few tutorials match. Which one do you mean?' }, html: `<p>Ada beberapa tutorial yang mirip. Mana yang Anda maksud?</p><div class="opt-list">${r.slice(0, 3).map((x) => tutItem(x.t)).join('')}</div><div class="opts">${optBtn('Semua tutorial darurat', 'data-act="tutlist"')}</div>` };
+    return tutorReply(top.t);
   }
 
   function emergencyReply(job) {
@@ -862,6 +926,8 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     const qn = normalize(q).split(' ').map((w) => SLANG[w] || w).join(' ');
     if (!DB) return { html: 'Database JSEA belum termuat. Muat ulang halaman ya.' };
 
+    if (/\b(tutorial|panduan|daftar|semua|menu)\b.*\b(darurat|emergency)\b|^(darurat|emergency|tanggap darurat)$/.test(qn) && TUT().length) return tutorListReply();
+    if (tutWanted(qn)) return tutorRoute(qn, q);
     if (RE.emergency.test(qn) && RE.emergencyNow.test(qn)) return emergencyReply(search(q).ranked[0] && search(q).ranked[0].job);
     const code = qn.match(RE.code);
     if (code) { const j = byCode.get(`${code[1]}-${String(code[2]).padStart(2, '0')}`); if (j) return jseaReply(j, { brand: gen.brand }); }
@@ -945,6 +1011,8 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
     const b = e.target.closest('[data-act]'); if (!b) return;
     const act = b.dataset.act;
     if (act === 'jsea') showJSEA(b.dataset.code);
+    else if (act === 'tutor') { const t = TUT().find((x) => x.id === b.dataset.id); if (t) { userSays('Tutorial ' + t.title); botReply(async () => tutorReply(t), 'alert', 500); } }
+    else if (act === 'tutlist') { userSays('Tutorial darurat lainnya'); botReply(async () => tutorListReply()); }
     else if (act === 'ask') ask(b.dataset.q);
     else if (act === 'translate') toggleTranslate(b);
     else if (act === 'catalog') openCatalog();
@@ -960,7 +1028,7 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
   /* ---- chips cepat ---- */
   const CHIPS = [
     ['Buat JSEA Baru', 'Buat JSEA Baru'], ['Daftar Pekerjaan Excavator', 'Daftar Pekerjaan Excavator'], ['Daftar Pekerjaan ADT', 'Daftar Pekerjaan ADT'],
-    ['Truck & Mobile Workshop', 'Daftar Pekerjaan Truck dan Mobile Workshop'], ['Aturan Zero Energy State', 'Aturan Zero Energy State'],
+    ['Truck & Mobile Workshop', 'Daftar Pekerjaan Truck dan Mobile Workshop'], ['Aturan Zero Energy State', 'Aturan Zero Energy State'], ['🚨 Tutorial Darurat', 'Tutorial Darurat'],
   ];
   $('#chips').innerHTML = CHIPS.map(([l, q]) => `<button class="chip" type="button" data-q="${esc(q)}">${esc(l)}</button>`).join('') + `<a class="chip wa" href="${WA_URL}" target="_blank" rel="noopener noreferrer">Hubungi Tim Safety</a>`;
   $('#chips').addEventListener('click', (e) => { const c = e.target.closest('.chip[data-q]'); if (c) ask(c.dataset.q); });
