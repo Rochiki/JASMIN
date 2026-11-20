@@ -430,3 +430,5 @@ legend{font-weight:900;font-size:13.5px;padding:0 6px}
 .tut-it i{flex:none;font:800 10px/1 var(--font-d);font-style:normal;border-radius:5px;padding:4px 6px;margin-top:1px;color:#fff;letter-spacing:.4px}
 .k-wajib i{background:#C62828}.k-do i{background:#1565C0}.k-env i{background:#2E7D32}.k-ppe i{background:#6A1B9A}
 .tut-note,.tut-ref{margin:8px 12px 0;font-size:11.5px;opacity:.8}
+.btn-tut{background:#C62828;color:#fff}
+.c-tut{font-size:18px;line-height:1}

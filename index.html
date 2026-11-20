@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -120,6 +120,7 @@
 
       <div class="side-actions">
         <button class="btn-side" id="btnCatalog" type="button"><svg><use href="#s-doc"/></svg>Katalog Pekerjaan JSEA</button>
+        <button class="btn-side btn-tut" id="btnTutor" type="button">🚨 Tutorial Tanggap Darurat</button>
         <button class="btn-icon" id="btnSettings" type="button" title="Pengaturan suara &amp; Mode Cerdas" aria-label="Pengaturan"><svg><use href="#s-gear"/></svg></button>
       </div>
     </aside>
@@ -149,6 +150,7 @@
         <form class="composer" id="composer" autocomplete="off">
           <input id="input" type="text" inputmode="text" enterkeyhint="send" placeholder="Tanyakan sesuatu kepada Teh JASMIN..." aria-label="Pesan untuk Teh JASMIN" maxlength="600">
           <button class="c-btn c-doc" id="btnCatalog2" type="button" title="Katalog pekerjaan JSEA" aria-label="Katalog pekerjaan JSEA"><svg><use href="#s-doc"/></svg></button>
+          <button class="c-btn c-tut" id="btnTutor2" type="button" title="Tutorial tanggap darurat" aria-label="Tutorial tanggap darurat">🚨</button>
           <button class="c-btn c-send" type="submit" title="Kirim" aria-label="Kirim"><svg><use href="#s-send"/></svg></button>
         </form>
       </div>
@@ -180,6 +182,16 @@
     <div class="modal-body">
       <input id="catSearch" type="search" placeholder="Cari pekerjaan, mis. silinder, ban, las, parkir…" aria-label="Cari pekerjaan">
       <div id="catList" class="cat-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalTutor" hidden>
+  <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="tutTitle">
+    <header><h3 id="tutTitle">Tutorial Tanggap Darurat</h3><button class="x" data-close aria-label="Tutup">×</button></header>
+    <div class="modal-body">
+      <input id="tutSearch" type="search" placeholder="Cari situasi, mis. kebakaran, gempa, RJP, tumpahan…" aria-label="Cari tutorial darurat">
+      <div id="tutList" class="cat-list"></div>
     </div>
   </div>
 </div>
@@ -241,10 +253,10 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script src="jsea-database.js"></script>
-<script src="tutorial-darurat.js?v=4"></script>
-<script src="app.js?v=4"></script>
-<script src="export.js?v=4"></script>
-<script src="widget.js?v=4"></script>
+<script src="jsea-database.js?v=5"></script>
+<script src="tutorial-darurat.js?v=5"></script>
+<script src="app.js?v=5"></script>
+<script src="export.js?v=5"></script>
+<script src="widget.js?v=5"></script>
 </body>
 </html>

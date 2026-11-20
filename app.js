@@ -1012,7 +1012,7 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
     const act = b.dataset.act;
     if (act === 'jsea') showJSEA(b.dataset.code);
     else if (act === 'tutor') { const t = TUT().find((x) => x.id === b.dataset.id); if (t) { userSays('Tutorial ' + t.title); botReply(async () => tutorReply(t), 'alert', 500); } }
-    else if (act === 'tutlist') { userSays('Tutorial darurat lainnya'); botReply(async () => tutorListReply()); }
+    else if (act === 'tutlist') openTutor();
     else if (act === 'ask') ask(b.dataset.q);
     else if (act === 'translate') toggleTranslate(b);
     else if (act === 'catalog') openCatalog();
@@ -1059,6 +1059,18 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
   $('#catList').addEventListener('click', (e) => { const b = e.target.closest('[data-cat]'); if (!b) return; closeModals(); showJSEA(b.dataset.cat); });
   $('#btnCatalog').addEventListener('click', () => { $('#app').classList.remove('info-open'); openCatalog(); });
   $('#btnCatalog2').addEventListener('click', openCatalog);
+
+  /* ---- daftar tutorial darurat (terpisah dari katalog JSEA) ---- */
+  function renderTutList(filter = '') {
+    const f = normalize(filter);
+    const rs = f ? tutSearch(f).map((r) => r.t) : TUT();
+    $('#tutList').innerHTML = rs.length ? `<div class="opt-list">${rs.map((t) => `<button class="opt-item" type="button" data-tut="${esc(t.id)}"><span class="code">${esc(t.id)}</span><span class="tt">${esc(t.title)}</span><span class="go">Buka ›</span></button>`).join('')}</div>` : '<p style="padding:8px">Belum ada yang cocok. Coba kata lain, mis. “kebakaran”, “gempa”, “RJP”.</p>';
+  }
+  function openTutor() { renderTutList(''); $('#tutSearch').value = ''; $('#app').classList.remove('info-open'); openModal('#modalTutor'); }
+  $('#tutSearch').addEventListener('input', (e) => renderTutList(e.target.value));
+  $('#tutList').addEventListener('click', (e) => { const b = e.target.closest('[data-tut]'); if (!b) return; const t = TUT().find((x) => x.id === b.dataset.tut); if (!t) return; closeModals(); userSays('Tutorial ' + t.title); botReply(async () => tutorReply(t), 'alert', 500); });
+  $('#btnTutor').addEventListener('click', openTutor);
+  $('#btnTutor2').addEventListener('click', openTutor);
 
   /* ---- pengaturan Mode Cerdas ---- */
   function fillVoiceSelect(sel, l) {
