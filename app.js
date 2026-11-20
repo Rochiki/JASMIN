@@ -80,6 +80,59 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     return { play, think, say, show };
   })();
 
+
+  /* ======================================================================
+     1b. SUARA (TTS) — suara perempuan, ID / EN, hanya kalimat pertama
+     ====================================================================== */
+  const Voice = (() => {
+    const synth = window.speechSynthesis;
+    const supported = !!synth && 'SpeechSynthesisUtterance' in window;
+    let lang = store.get('jasmin.voice', 'id');
+    let voices = [];
+    const menu = $('#voiceMenu');
+    const FEMALE = /(female|woman|perempuan|wanita|gadis|damayanti|ardi?ana|google bahasa indonesia|google indonesia|microsoft (zira|jenny|aria|hazel|susan|libby|sonia|natasha|clara|emma|michelle)|samantha|karen|moira|tessa|serena|victoria|allison|ava|joanna|siri|google us english|google uk english female)/i;
+    const MALE = /(\bmale\b|\bman\b|pria|laki|andika|david|mark|george|daniel|james|guy|ryan|richard|alex|fred|rishi|google uk english male)/i;
+    function load() { voices = supported ? synth.getVoices() : []; }
+    if (supported) { load(); synth.onvoiceschanged = load; }
+    function pick(l) {
+      const pre = l === 'id' ? ['id-id', 'id_id', 'id'] : ['en-us', 'en-gb', 'en'];
+      const cand = voices.filter((v) => { const x = (v.lang || '').toLowerCase().replace('_', '-'); return pre.some((p) => x === p || x.startsWith(p + '-')); });
+      const f = cand.filter((v) => !MALE.test(v.name));
+      return f.find((v) => FEMALE.test(v.name)) || f[0] || cand[0] || null;
+    }
+    function firstSentence(t) {
+      t = String(t || '').replace(/\s+/g, ' ').trim();
+      const parts = t.match(/[^.!?]+[.!?]*/g) || [t];
+      let s = parts[0].trim();
+      if (s.replace(/[^\p{L}]/gu, '').length < 12 && parts[1]) s += ' ' + parts[1].trim();   // sapaan pendek ("Halo!") digabung dengan kalimat berikutnya
+      s = s.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/[«»*_`#]/g, '').trim();
+      return s.length > 160 ? s.slice(0, 160).replace(/\s+\S*$/, '') + '.' : s;
+    }
+    function stop() { if (supported) synth.cancel(); }
+    function speak(say) {
+      if (!supported || lang === 'off' || !say) return;
+      const text = firstSentence(typeof say === 'string' ? say : say[lang]);
+      if (!text) return;
+      stop();
+      const u = new SpeechSynthesisUtterance(text);
+      const v = pick(lang);
+      u.lang = lang === 'id' ? 'id-ID' : 'en-US';
+      if (v) { u.voice = v; u.lang = v.lang; }
+      u.pitch = 1.12; u.rate = 1.0; u.volume = 1;
+      synth.speak(u);
+    }
+    function set(l) {
+      lang = l; store.set('jasmin.voice', l);
+      $$('button', menu).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === l)));
+      if (l === 'off') stop();
+      else speak(l === 'id' ? 'Halo! Suara Bahasa Indonesia aktif.' : 'Hello! English voice is on.');
+    }
+    $$('button', menu).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === lang)));
+    menu.addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) set(b.dataset.v); });
+    if (!supported) { menu.title = 'Browser ini tidak mendukung suara'; menu.style.opacity = '.5'; }
+    return { speak, stop, get lang() { return lang; }, firstSentence };
+  })();
+
   /* ======================================================================
      2. PENGOLAHAN TEKS (bahasa pekerja, slang, sinonim)
      ====================================================================== */
@@ -415,9 +468,15 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     const row = addMsg('bot', res.html, { wide: res.wide });
     if (res.form) forms.set(row.id, res.form);
     Mascot.play(res.pose || pose, res.poseMs || 2600);
+    Voice.speak(res.say || autoSay(res, row));
     return row;
   }
 
+  // kalimat pertama otomatis dari balasan; versi Inggris generik bila tidak disediakan
+  function autoSay(res, row) {
+    const p = row.querySelector('.bubble p, .bubble li, .bubble');
+    return { id: p ? p.textContent : '', en: 'Here is the answer. Please read the details on the screen.' };
+  }
   const waBtn = (label = '💬 Hubungi Tim QSHE via WhatsApp') => `<a class="opt wa" href="${WA_URL}" target="_blank" rel="noopener noreferrer">${label}</a>`;
   const optBtn = (label, attrs) => `<button class="opt" type="button" ${attrs}>${label}</button>`;
   const jobItem = (j, label = 'Buat JSEA ›') => `<button class="opt-item" type="button" data-act="jsea" data-code="${esc(j.code)}"><span class="code">${esc(j.code)}</span><span class="tt">${esc(j.title)}</span><span class="go">${label}</span></button>`;
@@ -454,14 +513,14 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
   function jseaReply(job, ctx = {}) {
     const f = buildForm(job, { brand: ctx.brand });
     const lead = ctx.approx ? `Pekerjaan yang paling mendekati di database adalah <b>${esc(job.title)}</b> — ini JSEA-nya, cek dulu apakah sesuai ya.` : `Siap! Ini JSEA untuk <b>${esc(job.title)}</b> — baca tiap langkahnya bersama tim sebelum mulai kerja ya.`;
-    return { html: `<p>${lead}</p>${formHTML(f)}`, wide: true, form: f, pose: 'present', poseMs: 3200 };
+    return { html: `<p>${lead}</p>${formHTML(f)}`, wide: true, form: f, pose: 'present', poseMs: 3200, say: { id: ctx.approx ? 'Ini pekerjaan yang paling mendekati, cek dulu apakah sesuai ya.' : 'Siap! Ini JSEA-nya, baca tiap langkah bersama tim sebelum mulai kerja ya.', en: ctx.approx ? 'This is the closest job I found. Please check that it matches.' : 'Here is your JSEA. Please review each step with your team before starting work.' } };
   }
 
   function candidatesReply(list, intro) {
-    return { pose: 'think', html: `<p>${intro}</p><div class="opt-list">${list.map((r) => jobItem(r.job)).join('')}</div><p style="font-size:13px;margin-top:8px">Bukan yang ini? Tulis ulang dengan nama komponen dan aktivitasnya, atau buka katalog.</p><div class="opts">${optBtn('Buka Katalog', 'data-act="catalog"')}</div>` };
+    return { pose: 'think', say: { id: 'Ada beberapa pekerjaan yang mirip. Mana yang Anda maksud?', en: 'There are a few similar jobs. Which one do you mean?' }, html: `<p>${intro}</p><div class="opt-list">${list.map((r) => jobItem(r.job)).join('')}</div><p style="font-size:13px;margin-top:8px">Bukan yang ini? Tulis ulang dengan nama komponen dan aktivitasnya, atau buka katalog.</p><div class="opts">${optBtn('Buka Katalog', 'data-act="catalog"')}</div>` };
   }
   function notFoundReply(q) {
-    return { pose: 'think', html: `<p>Hmm, saya belum menemukan pekerjaan itu di database. Saya tidak mau menebak-nebak untuk urusan keselamatan.</p>
+    return { pose: 'think', say: { id: 'Saya belum menemukan pekerjaan itu di database.', en: 'I could not find that job in the database.' }, html: `<p>Hmm, saya belum menemukan pekerjaan itu di database. Saya tidak mau menebak-nebak untuk urusan keselamatan.</p>
       <p>Coba kata kunci lain (nama komponen + aktivitas, mis. <i>“lepas silinder bucket”</i>) atau lihat katalog. Kalau pekerjaannya memang belum ada, <b>tunda dulu</b> dan konsultasikan dengan atasan atau tim QSHE.</p>
       <div class="opts">${optBtn('Buka Katalog', 'data-act="catalog"')}${waBtn()}</div>` };
   }
@@ -470,7 +529,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     const g = jobs.find((j) => j.code === 'GEN-01');
     const src = (job && job.emergencyResponse.firstResponse) ? job : g;
     const e = src.emergencyResponse;
-    return { pose: 'alert', poseMs: 6000, html: `<div class="warnbox">⚠️ Bila ada korban atau situasi darurat sekarang: utamakan keselamatan jiwa, jangan menunda untuk bertanya ke chat.</div>
+    return { pose: 'alert', poseMs: 6000, say: { id: 'Utamakan keselamatan jiwa. Hentikan pekerjaan dan hubungi hotline QSHE sekarang.', en: 'Life safety comes first. Stop work and call the QSHE hotline now.' }, html: `<div class="warnbox">⚠️ Bila ada korban atau situasi darurat sekarang: utamakan keselamatan jiwa, jangan menunda untuk bertanya ke chat.</div>
       <p><b>Respon awal (dari database):</b> ${rich(e.firstResponse)}</p>
       ${e.equipment ? `<p><b>Peralatan darurat:</b> ${rich(e.equipment)}</p>` : ''}
       <p>Segera hubungi ERT/pengawas dan Hotline QSHE.</p><div class="opts">${waBtn('🚨 Hubungi Hotline QSHE')}</div>` };
@@ -491,7 +550,7 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     if (/\b(darurat|emergency|p3k|pertolongan)\b/.test(qn)) { matched = true; const e = job.emergencyResponse; parts.push(['Tanggap darurat', [e.potential && 'Potensi: ' + e.potential, e.firstResponse && 'Respon awal: ' + e.firstResponse, e.equipment && 'Peralatan: ' + e.equipment].filter(Boolean)]); }
     if (!matched || !parts.length) { if (job.goldenRules.length) parts.push(['Aturan emas', job.goldenRules]); if (job.criticalControls.length) parts.push(['Kontrol kritis', job.criticalControls]); if (job.pointOfConcern.length) parts.push(['Hal yang perlu diwaspadai', job.pointOfConcern]); }
     const body = parts.map(([l, arr]) => `<p><b>${esc(l)}</b></p><ul>${arr.map((x) => `<li>${rich(x)}</li>`).join('')}</ul>`).join('');
-    return { pose: 'tip', poseMs: 3200, html: `<p>Ini yang tertulis di database untuk <b>${esc(job.title)}</b> (${esc(job.code)}):</p>${body}
+    return { pose: 'tip', poseMs: 3200, say: { id: 'Ini yang tertulis di database untuk pekerjaan tersebut.', en: 'Here is what the database says about this job.' }, html: `<p>Ini yang tertulis di database untuk <b>${esc(job.title)}</b> (${esc(job.code)}):</p>${body}
       <div class="opts">${optBtn('Lihat JSEA lengkapnya', `data-act="jsea" data-code="${esc(job.code)}"`)}${waBtn('💬 Tanya Tim QSHE')}</div>` };
   }
 
@@ -520,9 +579,9 @@ const WA_URL = `https://wa.me/${CONFIG.WA_NUMBER}?text=${encodeURIComponent(CONF
     if (RE.emergency.test(qn) && RE.emergencyNow.test(qn)) return emergencyReply(search(q).ranked[0] && search(q).ranked[0].job);
     const code = qn.match(RE.code);
     if (code) { const j = byCode.get(`${code[1]}-${String(code[2]).padStart(2, '0')}`); if (j) return jseaReply(j, { brand: gen.brand }); }
-    if (RE.thanks.test(qn) && qn.split(' ').length < 8) return { pose: 'heart', poseMs: 3200, html: '<p>Sama-sama! Kerja aman itu kerja bareng. Kalau ada pekerjaan lain yang butuh JSEA, Teh JASMIN siap bantu kapan saja. 🧡</p>' };
-    if (RE.greet.test(qn) && qn.split(' ').length <= 4) return { pose: 'wave', poseMs: 3000, html: greetHTML() };
-    if (RE.newJsea.test(qn)) return { pose: 'present', html: unitChooser() };
+    if (RE.thanks.test(qn) && qn.split(' ').length < 8) return { pose: 'heart', poseMs: 3200, say: { id: 'Sama-sama! Kerja aman itu kerja bareng.', en: 'You are welcome! Safe work is teamwork.' }, html: '<p>Sama-sama! Kerja aman itu kerja bareng. Kalau ada pekerjaan lain yang butuh JSEA, Teh JASMIN siap bantu kapan saja. 🧡</p>' };
+    if (RE.greet.test(qn) && qn.split(' ').length <= 4) return { pose: 'wave', poseMs: 3000, say: { id: 'Halo! Saya Teh JASMIN, asisten JSEA Anda.', en: 'Hello! I am Teh JASMIN, your JSEA assistant.' }, html: greetHTML() };
+    if (RE.newJsea.test(qn)) return { pose: 'present', say: { id: 'Siap! Pekerjaan untuk jenis unit apa?', en: 'Sure! Which type of equipment is the job for?' }, html: unitChooser() };
     if (RE.help.test(qn) && !RE.wantJsea.test(qn)) return { pose: 'present', html: helpHTML() };
     if (RE.catalog.test(qn)) { openCatalog(); return { pose: 'present', html: '<p>Katalog pekerjaan JSEA sudah saya buka. Pilih pekerjaannya, nanti langsung saya buatkan tabelnya.</p>' }; }
 
@@ -586,6 +645,7 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
      ====================================================================== */
   async function ask(text, echo = true) {
     text = text.trim(); if (!text) return;
+    Voice.stop();
     if (echo) userSays(text);
     await botReply(() => respond(text));
   }
@@ -703,5 +763,5 @@ ATURAN: (1) Gunakan HANYA informasi pada KONTEKS. (2) Jangan menyebut merek, pro
   }
 
   /* ---- API untuk export.js ---- */
-  window.JASMIN = { CONFIG, WA_URL, DB, buildForm, cellText, todayISO, todayLong, toast, Mascot, store, esc, plain, PV, NOENV, respond, search, genericize };
+  window.JASMIN = { Voice, CONFIG, WA_URL, DB, buildForm, cellText, todayISO, todayLong, toast, Mascot, store, esc, plain, PV, NOENV, respond, search, genericize };
 })();

@@ -315,3 +315,11 @@ legend{font-weight:900;font-size:13.5px;padding:0 6px}
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
 @media print{.bg-decor,.sidebar,.composer-area,.mascot,.topbar{display:none!important}}
+
+/* ---- pilihan bahasa suara ---- */
+.voice{display:flex;align-items:center;gap:3px;margin-left:12px;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:3px 4px 3px 9px;box-shadow:2px 2px 0 var(--orange)}
+.voice-ic{font-size:14px}
+.voice button{border:0;background:transparent;font-weight:900;font-size:12.5px;color:var(--navy);border-radius:999px;padding:4px 9px;cursor:pointer;min-width:30px}
+.voice button[aria-pressed="true"]{background:var(--navy);color:#fff}
+.voice button:focus-visible{outline:2px solid var(--orange);outline-offset:1px}
+@media (max-width:720px){.voice{margin-left:6px;padding:2px 3px 2px 6px}.voice-ic{display:none}.voice button{padding:3px 7px;font-size:12px;min-width:26px}}

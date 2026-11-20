@@ -40,6 +40,12 @@ Isi `rotasi` (daftar kalimat) agar kartu berganti teks tiap hari; kosongkan `[]`
 2. Jalankan `node tools/build-database.mjs` → `jsea-database.js` dibuat ulang dan diverifikasi (tidak boleh ada teks hilang).
 3. Commit hasilnya.
 
+## Suara Teh JASMIN (TTS)
+Menu **ID | EN | 🔇** di bagian atas chat memilih bahasa suara. Teh JASMIN hanya membacakan **kalimat pertama** tiap balasan, memakai suara perempuan bawaan browser (Web Speech API, gratis, tanpa API key). Pilihan tersimpan di perangkat.
+- Suara EN membacakan kalimat Inggris yang sudah disiapkan (`say.en` di `app.js`), bukan menerjemahkan isi tabel.
+- Kualitas suara tergantung browser/perangkat: Chrome & Edge (Windows/Android) biasanya punya suara Indonesia perempuan. Bila tidak ada suara perempuan, dipakai suara bahasa itu yang tersedia.
+- Suara baru berbunyi setelah pengguna berinteraksi (aturan browser), jadi sapaan pembuka saat halaman dibuka tidak dibacakan.
+
 ## Mode Cerdas (opsional)
 Tombol ⚙ di sidebar. Isi API key Gemini sendiri; tersimpan hanya di browser perangkat itu. Dipakai untuk tanya-jawab bebas saja; tabel JSEA selalu diambil dari database.
 
